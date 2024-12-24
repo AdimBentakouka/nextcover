@@ -6,12 +6,16 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "init": "pnpm prisma generate && pnpm prisma db push && pnpm prisma db seed"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.7.4",
     "@hookform/resolvers": "^3.9.1",
+    "@prisma/client": "^6.1.0",
     "@radix-ui/react-label": "^2.1.1",
     "@radix-ui/react-slot": "^1.1.1",
+    "@warzon/logger": "^1.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
@@ -32,7 +36,11 @@
     "eslint-config-next": "15.1.0",
     "postcss": "^8",
     "prettier": "^3.4.2",
+    "prisma": "^6.1.0",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed/index.ts"
   }
 }
