@@ -22,3 +22,6 @@ npm-debug.log
 
 # database
 /apps/backend/db
+
+# logs
+logs

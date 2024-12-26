@@ -2,9 +2,16 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { WinstonModule } from 'nest-winston';
+import { winstonLoggerConfig } from './utils/logger';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, {
+        // Utilisation de Winston pour le logging principal
+        logger: WinstonModule.createLogger({
+            instance: winstonLoggerConfig,
+        }),
+    });
 
     app.setGlobalPrefix('api/v1');
     app.useGlobalPipes(
