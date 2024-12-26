@@ -1,5 +1,14 @@
 import * as winston from 'winston';
 import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
+import 'winston-daily-rotate-file';
+
+const configTransport = {
+    dirname: 'logs/',
+    filename: 'log-%DATE%.log',
+    datePattern: 'YYYY-MM-DD', // rotates every day
+};
+
+const transport = new winston.transports.DailyRotateFile(configTransport);
 
 export const winstonLoggerConfig = winston.createLogger({
     level: 'info',
@@ -17,9 +26,6 @@ export const winstonLoggerConfig = winston.createLogger({
                 nestWinstonModuleUtilities.format.nestLike(),
             ),
         }),
-        new winston.transports.File({
-            filename: `logs/${new Date().toISOString().split('T')[0]}.log`,
-            level: 'info',
-        }),
+        transport,
     ],
 });
