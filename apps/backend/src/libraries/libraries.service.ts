@@ -81,6 +81,7 @@ export class LibrariesService {
             if (error.code === 'SQLITE_CONSTRAINT') {
                 throw new ConflictException('Path already used');
             }
+            throw error;
         }
     }
 
