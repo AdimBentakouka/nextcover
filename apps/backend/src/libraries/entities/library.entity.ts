@@ -2,14 +2,18 @@ import {
     Column,
     CreateDateColumn,
     Entity,
+    OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
+import {MetadataStrategies} from '../../metadata/metadata.service';
+import {Ebook} from '../../ebook/entities/ebook.entity';
 
-export enum LibraryType {
+export enum LibraryTypes {
     BOOK = 'book',
     MANGA = 'manga',
     MANWA = 'manwa',
+    BD = 'bd',
     OTHER = 'other',
 }
 
@@ -21,11 +25,19 @@ export class Library {
     @Column()
     name: string;
 
-    @Column({ unique: true })
+    @Column({unique: true})
     path: string;
 
-    @Column()
-    type: LibraryType;
+    @Column({default: LibraryTypes.OTHER})
+    libraryType: LibraryTypes;
+
+    @Column({default: MetadataStrategies.GOOGLE_BOOKS})
+    metadataStrategy: MetadataStrategies;
+
+    @OneToMany(() => Ebook, (ebook) => ebook.library, {
+        cascade: true,
+    })
+    ebooks: Ebook[];
 
     @CreateDateColumn()
     createdAt: Date;

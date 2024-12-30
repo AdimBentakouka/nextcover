@@ -1,16 +1,19 @@
-import {
-    ConflictException,
-    Injectable,
-    Logger,
-    NotFoundException,
-} from '@nestjs/common';
-import { CreateLibraryDto } from './dto/create-library.dto';
-import { UpdateLibraryDto } from './dto/update-library.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Library } from './entities/library.entity';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import {ConflictException, Injectable, Logger, NotFoundException} from '@nestjs/common';
+import {CreateLibraryDto} from './dto/create-library.dto';
+import {UpdateLibraryDto} from './dto/update-library.dto';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {Library} from './entities/library.entity';
+import {EventEmitter2} from '@nestjs/event-emitter';
+import {checkPathExists, ensurePathEndWithSlash} from '../utils/file-utils';
 
+import {AppEvents} from '../utils/event-constants';
+import {messages} from '../utils/messages';
+
+/**
+ * A service responsible for managing library-related operations, such as creating, retrieving, updating, and deleting library entities.
+ * Emits events "libraries.updated" upon library updates.
+ */
 @Injectable()
 export class LibrariesService {
     private readonly logger = new Logger(LibrariesService.name, {
@@ -23,81 +26,168 @@ export class LibrariesService {
         private readonly eventEmitter: EventEmitter2,
     ) {}
 
-    async create(createLibraryDto: CreateLibraryDto) {
+    /**
+     * Creates a new library record in the repository.
+     * Emits an event **AppEvents.LIBRARIES_UPDATED** upon successful creation.
+     * @param {CreateLibraryDto} createLibraryDto - The data transfer object containing the necessary information to create a library.
+     * @return {Promise<Object>} A promise that resolves with the newly created library record.
+     */
+    async create(createLibraryDto: CreateLibraryDto): Promise<Library> {
         try {
-            const library = this.libraryRepository.create(createLibraryDto);
-
-            const result = await this.libraryRepository.save(library);
-
-            this.eventEmitter.emit('watch-folder.update');
-
-            this.logger.log(
-                `Library '${result.name}' created at '${result.path}'`,
+            createLibraryDto.path = ensurePathEndWithSlash(
+                createLibraryDto.path,
             );
 
-            return result;
+            await this.handlePathNotExist(createLibraryDto.path);
+
+            const library = this.libraryRepository.create(createLibraryDto);
+
+            const createResult = await this.libraryRepository.save(library);
+
+            this.eventEmitter.emit(AppEvents.LIBRARIES_UPDATED);
+
+            this.logger.log(
+                messages.success.LIBRARY_CREATED.replace(
+                    '{name}',
+                    createResult.name,
+                ).replace('{path}', createResult.path),
+            );
+
+            return createResult;
         } catch (error) {
-            if (error.code === 'SQLITE_CONSTRAINT') {
-                throw new ConflictException('Path already used');
+            if (
+                error.code === 'SQLITE_CONSTRAINT' &&
+                error.message.includes('UNIQUE constraint failed: library.path')
+            ) {
+                throw new ConflictException(
+                    messages.errors.LIBRARY_PATH_ALREADY_EXISTS.replace(
+                        '{path}',
+                        createLibraryDto.path,
+                    ),
+                );
             }
+            this.logger.error(error);
+            throw error;
         }
     }
 
-    findAll() {
+    /**
+     * Retrieves all records from the library repository.
+     *
+     * @return {Promise<Library[]>} An array containing all records found in the library repository.
+     */
+    findAll(): Promise<Library[]> {
         return this.libraryRepository.find();
     }
 
-    async findOne(id: string) {
+    /**
+     * Retrieves a single library entity by id.
+     * If the library is not found, throws a NotFoundException.
+     *
+     * @param {string} id - The unique identifier of the library to retrieve.
+     * @return {Promise<Library>} Returns a promise that resolves with the library entity, including its related ebooks.
+     */
+    async findOne(id: string): Promise<Library> {
         const library = await this.libraryRepository.findOne({
             where: {
                 id: id,
             },
+            relations: ['ebooks'],
         });
 
         if (!library) {
-            throw new NotFoundException(`Library with id '${id}' not found.`);
+            throw new NotFoundException(
+                messages.errors.LIBRARY_NOT_FOUND.replace('{id}', id),
+            );
         }
 
         return library;
     }
 
-    async update(id: string, updateLibraryDto: UpdateLibraryDto) {
+    /**
+     * Updates the library by ID.
+     * Emits an event "libraries.updated" upon successful updated.
+     * @param {string} id - The ID of the library to update.
+     * @param {UpdateLibraryDto} updateLibraryDto - The data to update the library with.
+     * @return {Promise<Library>} A promise that resolves to the updated library entity.
+     */
+    async update(
+        id: string,
+        updateLibraryDto: UpdateLibraryDto,
+    ): Promise<Library> {
         try {
             const library = await this.findOne(id);
+            const {name, path} = library;
+
+            await this.handlePathNotExist(updateLibraryDto.path);
 
             const newLibrary = this.libraryRepository.merge(
                 library,
                 updateLibraryDto,
             );
 
-            const result = await this.libraryRepository.save(newLibrary);
+            const updateResult = await this.libraryRepository.save(newLibrary);
 
-            this.logger.log(`Library '${library.name}' updated.`);
-
-            this.eventEmitter.emit('watch-folder.update');
-
-            return result;
-        } catch (error) {
-            if (error.code === 'SQLITE_CONSTRAINT') {
-                throw new ConflictException('Path already used');
+            if (updateLibraryDto.path !== path) {
+                this.eventEmitter.emit(AppEvents.LIBRARIES_UPDATED);
             }
+
+            this.logger.log(
+                messages.success.LIBRARY_UPDATED.replace('{name}', name),
+            );
+
+            return updateResult;
+        } catch (error) {
+            this.logger.error(error);
             throw error;
         }
     }
 
-    async remove(id: string) {
-        const result = await this.libraryRepository.delete(id);
+    /**
+     * Removes a library record by id.
+     * Emits an event "libraries.updated" upon successful deleted.
+     * @param {string} id - The unique identifier of the library to be removed.
+     * @return {Promise<Object>} A promise that resolves with a message indicating the library has been deleted,
+     * or throws an error if the library is not found.
+     * @throws {NotFoundException} If the library with the given id is not found.
+     */
+    async remove(id: string): Promise<{message: string}> {
+        try {
+            const deleteResult = await this.libraryRepository.delete(id);
 
-        this.logger.log(`Library '${id}' deleted.`);
+            if (deleteResult.affected) {
+                const deletionMessage =
+                    messages.success.LIBRARY_DELETED.replace('{id}', id);
 
-        if (result.affected) {
-            this.eventEmitter.emit('watch-folder.update');
+                this.logger.log(deletionMessage);
+                this.eventEmitter.emit(AppEvents.LIBRARIES_UPDATED);
 
-            return {
-                message: 'Library has been deleted.',
-            };
+                return {
+                    message: deletionMessage,
+                };
+            }
+
+            throw new NotFoundException(
+                messages.errors.LIBRARY_NOT_FOUND.replace('{id}', id),
+            );
+        } catch (error) {
+            this.logger.error(error);
+            throw error;
         }
+    }
 
-        throw new NotFoundException(`Library with id '${id}' not found.`);
+    /**
+     * Handles scenarios when the specified path does not exist.
+     *
+     * @param {string} path - The path to check for existence.
+     * @return {Promise<void>} A promise that resolves when the operation is complete.
+     * @throws {ConflictException} If the path already exists.
+     */
+    private async handlePathNotExist(path: string): Promise<void> {
+        if (!checkPathExists(path)) {
+            throw new ConflictException(
+                messages.errors.PATH_NOT_EXIST_FS.replace('{path}', path),
+            );
+        }
     }
 }

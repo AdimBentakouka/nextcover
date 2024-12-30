@@ -1,6 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { LibraryType } from '../entities/library.entity';
-import { IsDefined, IsEnum, IsString, Length } from 'class-validator';
+import {ApiProperty} from '@nestjs/swagger';
+
+import {IsDefined, IsEnum, IsString, Length} from 'class-validator';
+import {MetadataStrategies} from '../../metadata/metadata.service';
+import {LibraryTypes} from '../entities/library.entity';
 
 export class CreateLibraryDto {
     @ApiProperty({
@@ -23,10 +25,21 @@ export class CreateLibraryDto {
 
     @ApiProperty({
         description: 'Library type',
-        enum: LibraryType,
-        example: LibraryType.BOOK,
+        enum: LibraryTypes,
+        example: LibraryTypes.BOOK,
+        default: LibraryTypes.OTHER,
     })
     @IsDefined()
-    @IsEnum(LibraryType)
-    type: LibraryType;
+    @IsEnum(LibraryTypes)
+    libraryType: LibraryTypes;
+
+    @ApiProperty({
+        description: 'Strategy to use to get metadata',
+        enum: MetadataStrategies,
+        example: MetadataStrategies.GOOGLE_BOOKS,
+        default: MetadataStrategies.GOOGLE_BOOKS,
+    })
+    @IsDefined()
+    @IsEnum(MetadataStrategies)
+    metadataStrategy: MetadataStrategies;
 }

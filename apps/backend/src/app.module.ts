@@ -1,11 +1,13 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { LibrariesModule } from './libraries/libraries.module';
-import { WatchFolderModule } from './watch-folder/watch-folder.module';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import {Module} from '@nestjs/common';
+import {AppController} from './app.controller';
+import {AppService} from './app.service';
+import {ConfigModule} from '@nestjs/config';
+import {TypeOrmModule} from '@nestjs/typeorm';
+import {LibrariesModule} from './libraries/libraries.module';
+import {WatchFolderModule} from './watch-folder/watch-folder.module';
+import {EventEmitterModule} from '@nestjs/event-emitter';
+import {MetadataModule} from './metadata/metadata.module';
+import {EbookModule} from './ebook/ebook.module';
 
 @Module({
     imports: [
@@ -21,6 +23,8 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
         EventEmitterModule.forRoot(),
         LibrariesModule,
         WatchFolderModule,
+        MetadataModule,
+        EbookModule,
     ],
     controllers: [AppController],
     providers: [AppService],

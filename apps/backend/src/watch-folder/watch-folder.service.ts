@@ -1,98 +1,177 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import * as chokidar from 'chokidar';
-import * as fs from 'fs';
-import { LibrariesService } from '../libraries/libraries.service';
-import { OnEvent } from '@nestjs/event-emitter';
+import {Injectable, Logger, OnModuleInit} from '@nestjs/common';
+import {type ChokidarOptions, type FSWatcher, watch} from 'chokidar';
+import {LibrariesService} from '../libraries/libraries.service';
+import {EventEmitter2, OnEvent} from '@nestjs/event-emitter';
+import {AppEvents} from '../utils/event-constants';
+import {checkPathExists} from '../utils/file-utils';
+import {messages} from '../utils/messages';
+import {MetadataService} from '../metadata/metadata.service';
 
+/**
+ * Configuration object for Chokidar file watcher.
+ */
+const WATCHER_OPTIONS: ChokidarOptions = {
+    usePolling: false,
+    awaitWriteFinish: true,
+    depth: 1,
+    ignoreInitial: false,
+};
+
+/**
+ * Service for managing and monitoring specified folders using a file watcher.
+ * The WatchFolderService integrates with the LibrariesService to dynamically update
+ */
 @Injectable()
 export class WatchFolderService implements OnModuleInit {
     private readonly logger = new Logger(WatchFolderService.name, {
         timestamp: true,
     });
 
-    private watcher: chokidar.FSWatcher;
+    private watcher: FSWatcher;
+    private watchedFolders: string[] = [];
 
-    private foldersToWatch: string[] = [];
+    constructor(
+        private readonly librariesService: LibrariesService,
+        private readonly metadataService: MetadataService,
+        private readonly eventEmitter: EventEmitter2,
+    ) {
+    }
 
-    constructor(private readonly librariesService: LibrariesService) {}
-
+    /**
+     * Initializes the module by setting up a file watcher
+     * Emits an event **AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED** upon completion of the initial scan.
+     */
     async onModuleInit() {
-        this.logger.log('Initializing watch-folder');
+        this.watcher = watch([], WATCHER_OPTIONS);
 
-        this.watcher = chokidar.watch([], {
-            usePolling: false,
-            awaitWriteFinish: true,
-            depth: 1,
-            ignoreInitial: false,
-        });
+        await this.refreshWatchedFolders();
 
-        await this.setFoldersToWatch();
+        this.setupWatchFolder();
+    }
 
-        let scanComplete = false;
+    /**
+     * Synchronizes the watched folders with the current library paths
+     * Triggered by the **AppEvents.LIBRARIES_UPDATED** event.
+     * @return {Promise<void>} A promise that resolves once the synchronization process is complete.
+     */
+    @OnEvent(AppEvents.LIBRARIES_UPDATED)
+    async refreshWatchedFolders(): Promise<void> {
+        const libraries = await this.librariesService.findAll();
 
-        const files: string[] = [];
+        const targetFolders = libraries.map((library) => library.path);
 
+        const unWatchedFolders = this.watchedFolders.filter(
+            (folder) => !targetFolders.includes(folder),
+        );
+
+        this.addNewWatchedFolders(targetFolders);
+
+        if (unWatchedFolders.length > 0) {
+            this.removeUnWatchedFolders(unWatchedFolders);
+        }
+
+        this.watchedFolders = targetFolders;
+    }
+
+    /**
+     * Sets up a watcher for the designated folder to monitor file additions, changes, and removals.
+     *
+     * It listens for:
+     * - 'add': Logs when a file is added to the folder.
+     * - 'change': Logs when a file in the folder is modified.
+     * - 'unlink': Logs when a file is removed from the folder.
+     * - 'ready': Marks the initial scan as complete and emits a completion event.
+     */
+    private setupWatchFolder() {
+        let initialScanCompleted = false;
         this.watcher
-            .on('add', (path) => {
-                if (scanComplete) {
-                    return this.logger.log(`File ${path} has been added`);
+            .on('add', (filePath) => {
+                if (initialScanCompleted) {
+                    this.logger.log(
+                        messages.logs.WATCH_FOLDER_FILE_ADDED.replace(
+                            '{path}',
+                            filePath,
+                        ),
+                    );
                 }
+                this.metadataService.create(filePath);
+            })
+            .on('change', (filePath) => {
+                this.logger.log(
+                    messages.logs.WATCH_FOLDER_FILE_CHANGED.replace(
+                        '{path}',
+                        filePath,
+                    ),
+                );
 
-                files.push(path);
+                this.metadataService.update(filePath);
             })
-            .on('change', (path) => {
-                this.logger.log(`File ${path} has been change`);
-            })
-            .on('unlink', (path) => {
-                this.logger.log(`File ${path} has been unlink`);
+            .on('unlink', (filePath) => {
+                this.logger.log(
+                    messages.logs.WATCH_FOLDER_FILE_REMOVED.replace(
+                        '{path}',
+                        filePath,
+                    ),
+                );
+
+                this.metadataService.remove(filePath);
             })
             .on('ready', () => {
-                scanComplete = true;
+                initialScanCompleted = true;
+                this.logger.log(messages.logs.WATCH_FOLDER_SCAN_COMPLETED);
 
-                this.logger.log('Initial scan complete. Ready for changes.');
+                this.eventEmitter.emit(
+                    AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED,
+                );
             });
     }
 
-    @OnEvent('watch-folder.update')
-    async setFoldersToWatch() {
-        this.logger.log('updated path to watch');
+    /**
+     * Adds new watched folders to the file watcher if the paths exist and are not already being watched.
+     *
+     * @param {string[]} targetPaths - An array of folder paths to be added to the watcher.
+     * @return {void}
+     */
+    private addNewWatchedFolders(targetPaths: string[]): void {
+        const missingFolders: string[] = [];
 
-        const folders = (await this.librariesService.findAll()).map(
-            (lib) => lib.path,
-        );
+        targetPaths.forEach((path) => {
+            if (this.watchedFolders.includes(path)) return;
 
-        const foldersUnWatched = this.foldersToWatch.filter(
-            (v) => !folders.includes(v),
-        );
-
-        const foldersNotExists = [];
-
-        folders.map((path) => {
-            if (!this.foldersToWatch.includes(path)) {
-                //check si dossier existe
-                if (!fs.existsSync(path)) {
-                    foldersNotExists.push(path);
-                    return this.logger.warn(`Folder '${path}' does not exist`);
-                }
-
-                this.watcher.add(path);
+            if (!checkPathExists(path)) {
+                missingFolders.push(path);
+                return this.logger.warn(
+                    messages.errors.PATH_NOT_EXIST_FS.replace('{path}', path),
+                );
             }
+
+            this.watcher.add(path);
         });
 
         this.logger.log(
-            `folder watched [\"${folders.filter((v) => !foldersNotExists.includes(v)).join('\",\"')}"]`,
+            messages.logs.WATCH_FOLDER_WATCHED.replace(
+                '{paths}',
+                targetPaths
+                    .filter((v) => !missingFolders.includes(v))
+                    .join('","'),
+            ),
         );
+    }
 
-        if (foldersUnWatched.length > 0) {
-            foldersUnWatched.map((path) => {
-                this.watcher.unwatch(path);
-            });
+    /**
+     * Removes the specified folders from being watched.
+     *
+     * @param {string[]} unWatchedFolders - An array of folder paths to be removed from watch.
+     * @return {void}.
+     */
+    private removeUnWatchedFolders(unWatchedFolders: string[]): void {
+        unWatchedFolders.forEach((path) => this.watcher.unwatch(path));
 
-            this.logger.log(
-                `folder unwatched [\"${foldersUnWatched.join('\",\"')}"]`,
-            );
-        }
-
-        this.foldersToWatch = folders;
+        this.logger.log(
+            messages.logs.WATCH_FOLDER_UNWATCHED.replace(
+                '{paths}',
+                unWatchedFolders.join('","'),
+            ),
+        );
     }
 }
