@@ -1,4 +1,4 @@
-import {Injectable, Logger} from '@nestjs/common';
+import {Injectable, Logger, OnModuleInit} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';
 import {Ebook} from './entities/ebook.entity';
@@ -8,6 +8,7 @@ import {AppEvents} from '../utils/event-constants';
 import {OnEvent} from '@nestjs/event-emitter';
 import {getFileInfo} from '../utils/file-utils';
 import {messages} from '../utils/messages';
+import {Library} from '../libraries/entities/library.entity';
 
 /**
  * A constant array that defines the list of allowed file extensions for processing.
@@ -29,14 +30,20 @@ const ALLOWED_FILE_EXTENSIONS = [
     '.rar',
 ];
 
+/**
+ * EbookService handles operations related to e-books, including creation, updating,
+ * metadata management, and interactions with e-book libraries. It also processes
+ * events related to library updates and folder scans.
+ */
 @Injectable()
-export class EbookService {
+export class EbookService implements OnModuleInit {
     private readonly logger = new Logger(EbookService.name, {
         timestamp: true,
     });
 
     private scanCompleted: boolean = false;
     private unprocessedFilePath: FileInfo[] = [];
+    private libraries: Library[] = [];
 
     constructor(
         @InjectRepository(Ebook)
@@ -45,21 +52,49 @@ export class EbookService {
         private readonly metadataService: MetadataService,
     ) {}
 
-    create(filePath: string): void {
+    async onModuleInit() {
+        this.libraries = await this.librariesService.findAll();
+    }
+
+    /**
+     * Creates a new ebook entry from the specified file path.
+     *
+     * @param {string} filePath - The path of the file to create an ebook entry from.
+     * @return {Promise<void>} A promise that resolves once the ebook entry is created and saved.
+     */
+    async create(filePath: string): Promise<void> {
         const fileInfo = this.safeGetFileInfo(filePath);
 
         if (!fileInfo) return;
 
+        // if scan processing, add file into list of file processing
         if (!this.scanCompleted) {
             this.unprocessedFilePath.push(fileInfo);
-            // return;
+            return;
         }
 
-        // getMetadata
+        const metadata = await this.getCompleteMetadata(fileInfo);
 
-        // Generate minima miniature si non existante
+        const ebook = await this.createAndSaveEbook(fileInfo, metadata);
 
-        // créer ebooks
+        return this.logger.log(
+            messages.success.EBOOK_CREATED.replace('{title}', ebook.title),
+        );
+    }
+
+    /**
+     * Creates multiple resources based on the provided file paths.
+     *
+     * @param {string[]} filePaths - An array of file paths to be processed.
+     * @return {Promise<void>} A promise that resolves when all resources have been created.
+     */
+    async createBulk(filePaths: string[]): Promise<void> {
+        if (filePaths.length === 0) {
+            return;
+        }
+        for (const filePath of filePaths) {
+            await this.create(filePath);
+        }
     }
 
     /**
@@ -79,19 +114,74 @@ export class EbookService {
     remove(filepath: string): void {}
 
     /**
+     * Updates the libraries by fetching all available entries from the libraries service.
+     * Trigger by **AppEvents.LIBRARIES_UPDATED**
+     */
+    @OnEvent(AppEvents.LIBRARIES_UPDATED)
+    async refreshLibraries(): Promise<void> {
+        this.libraries = await this.librariesService.findAll();
+    }
+
+    private async createAndSaveEbook(
+        fileInfo: FileInfo & {title: string; library: Library},
+        metadata: Metadata,
+    ): Promise<Ebook> {
+        const ebook = this.EbookRepository.create({
+            ...fileInfo,
+            ...metadata,
+        });
+
+        await this.EbookRepository.save(ebook);
+        return ebook;
+    }
+
+    /**
+     * Retrieves and completes metadata for the given file information. If the metadata
+     * does not include a thumbnail, one is generated and added.
+     *
+     * @param {FileInfo & {library: Library}} fileInfo - An object containing file information
+     *        and associated library details. The library includes metadata strategy.
+     * @return {Promise<Metadata>} A promise that resolves to the complete metadata object
+     *         including any generated thumbnail if necessary.
+     */
+    private async getCompleteMetadata(
+        fileInfo: FileInfo & {library: Library},
+    ): Promise<Metadata> {
+        const metadata = await this.metadataService.getMetadata(
+            fileInfo.fileName,
+            fileInfo.library.metadataStrategy,
+        );
+
+        if (!metadata.thumbnail) {
+            metadata.thumbnail = await this.metadataService.generateThumbnail(
+                fileInfo.filepath,
+                fileInfo.extension,
+            );
+        }
+
+        return metadata;
+    }
+
+    /**
      * Handles the event when the initial folder scan is completed.
      * Performs actions such as creating and deleting bulk entries as part of post-scan handling.
-     *
+     * Trigger by **AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED**
      * @return {void}
      */
     @OnEvent(AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED)
-    private onScanCompleted(): void {
+    private async onScanCompleted(): Promise<void> {
         this.scanCompleted = true;
 
-        console.log(this.unprocessedFilePath);
-        // CreateBulk
+        const ebooks = await this.EbookRepository.find();
 
-        // DeleteBulk
+        const ebooksNotCreated = this.unprocessedFilePath.filter(
+            ({filepath}) =>
+                !ebooks.find(
+                    ({filepath: ebookFilePath}) => ebookFilePath === filepath,
+                ),
+        );
+
+        await this.createBulk(ebooksNotCreated.map(({filepath}) => filepath));
     }
 
     /**
@@ -112,7 +202,7 @@ export class EbookService {
      */
     private safeGetFileInfo(
         filepath: string,
-    ): (FileInfo & {title: string}) | null {
+    ): (FileInfo & {title: string; library: Library}) | null {
         const fileInfo = getFileInfo(filepath);
 
         if (!this.isAllowedFileExtension(fileInfo.extension)) {
@@ -127,9 +217,14 @@ export class EbookService {
             return null;
         }
 
+        const library = this.libraries.find((lib) =>
+            fileInfo.filepath.startsWith(lib.path),
+        );
+
         return {
             title: this.extractTitle(fileInfo.fileName),
             ...fileInfo,
+            library,
         };
     }
 
@@ -149,6 +244,7 @@ export class EbookService {
                 .replace(/(\[.*?]|\(.*?\))/g, '')
                 // Converts Tome abbreviations (e.g., TXX) to full text
                 .replace(/\bT(\d{2})\b/g, 'Tome $1')
+                .replace(/(\D)0(\d)/g, '$1$2')
                 .trim()
         );
     }

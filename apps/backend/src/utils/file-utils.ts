@@ -28,9 +28,14 @@ export const ensurePathEndWithSlash = (path: string): string =>
  * - `directoryName`: The directory name containing the file.
  * - `extension`: The file extension, including the leading dot.
  */
-export const getFileInfo = (filePath: string): FileInfo => ({
-    fileName: basename(filePath.split('.')[0] || filePath),
-    filepath: filePath,
-    directoryName: basename(dirname(filePath)),
-    extension: extname(filePath),
-});
+export const getFileInfo = (filePath: string): FileInfo => {
+    const fileName = basename(filePath);
+    const extension = extname(filePath);
+
+    return {
+        fileName: fileName.replace(extension, ''),
+        extension: extension,
+        filepath: filePath,
+        directoryName: basename(dirname(filePath)),
+    };
+};

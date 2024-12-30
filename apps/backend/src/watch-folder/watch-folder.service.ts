@@ -84,7 +84,7 @@ export class WatchFolderService implements OnModuleInit {
     private setupWatchFolder() {
         let initialScanCompleted = false;
         this.watcher
-            .on('add', (filePath) => {
+            .on('add', async (filePath) => {
                 if (initialScanCompleted) {
                     this.logger.log(
                         messages.logs.WATCH_FOLDER_FILE_ADDED.replace(
@@ -117,7 +117,7 @@ export class WatchFolderService implements OnModuleInit {
             })
             .on('ready', () => {
                 initialScanCompleted = true;
-                this.logger.log(messages.logs.WATCH_FOLDER_SCAN_COMPLETED);
+                this.logger.log(messages.success.WATCH_FOLDER_SCAN_COMPLETED);
 
                 this.eventEmitter.emit(
                     AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED,

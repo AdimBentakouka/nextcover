@@ -18,11 +18,11 @@ export class Ebook {
     })
     library: Library;
 
-    @Column()
+    @Column({unique: true})
     filepath: string;
 
     @Column()
-    dirname: string;
+    directoryName: string;
 
     @Column()
     title: string;
@@ -42,12 +42,12 @@ export class Ebook {
     @Column({nullable: true})
     isbn?: string;
 
-    @Column({nullable: true})
-    datePublished?: Date;
-
     @CreateDateColumn()
     createdAt: Date;
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @Column({default: 0})
+    score: number;
 }
