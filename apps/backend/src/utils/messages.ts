@@ -16,6 +16,7 @@ export const messages = {
             "A library with the directory '{path}' already exists.",
         FILE_EXTENSION_NOT_ALLOWED:
             "The file '{fileName}' has an unsupported file extension and will be ignored.",
+        UNKNOWN_METADATA_STRATEGY: "Unknown metadata strategy '{strategy}'.",
     },
     success: {
         LIBRARY_CREATED:

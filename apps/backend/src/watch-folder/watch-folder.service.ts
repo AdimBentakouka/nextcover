@@ -5,7 +5,7 @@ import {EventEmitter2, OnEvent} from '@nestjs/event-emitter';
 import {AppEvents} from '../utils/event-constants';
 import {checkPathExists} from '../utils/file-utils';
 import {messages} from '../utils/messages';
-import {MetadataService} from '../metadata/metadata.service';
+import {EbookService} from '../ebook/ebook.service';
 
 /**
  * Configuration object for Chokidar file watcher.
@@ -32,10 +32,9 @@ export class WatchFolderService implements OnModuleInit {
 
     constructor(
         private readonly librariesService: LibrariesService,
-        private readonly metadataService: MetadataService,
+        private readonly ebookService: EbookService,
         private readonly eventEmitter: EventEmitter2,
-    ) {
-    }
+    ) {}
 
     /**
      * Initializes the module by setting up a file watcher
@@ -94,7 +93,7 @@ export class WatchFolderService implements OnModuleInit {
                         ),
                     );
                 }
-                this.metadataService.create(filePath);
+                this.ebookService.create(filePath);
             })
             .on('change', (filePath) => {
                 this.logger.log(
@@ -104,7 +103,7 @@ export class WatchFolderService implements OnModuleInit {
                     ),
                 );
 
-                this.metadataService.update(filePath);
+                this.ebookService.update(filePath);
             })
             .on('unlink', (filePath) => {
                 this.logger.log(
@@ -114,7 +113,7 @@ export class WatchFolderService implements OnModuleInit {
                     ),
                 );
 
-                this.metadataService.remove(filePath);
+                this.ebookService.remove(filePath);
             })
             .on('ready', () => {
                 initialScanCompleted = true;
