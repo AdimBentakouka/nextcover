@@ -24,7 +24,7 @@ export class MetadataService {
         metadataStrategy: MetadataStrategies,
     ): Promise<Metadata> {
         return await this.getMetadataStrategy(metadataStrategy).findMetadata(
-            title,
+            this.extractTitle(title),
         );
     }
 
@@ -58,5 +58,25 @@ export class MetadataService {
                     ),
                 );
         }
+    }
+
+    /**
+     * Extracts a formatted title from a given file name by performing transformations such as removing underscores,
+     * eliminating bracketed content, and converting specific abbreviations to full text.
+     *
+     * @param {string} fileName - The original file name to be transformed into a formatted title.
+     * @return {string} - The extracted and formatted title.
+     */
+    private extractTitle(fileName: string): string {
+        return (
+            fileName
+                // Removes underscores from the file name
+                .replaceAll('_', ' ')
+                // Removes groups of characters enclosed in brackets or parentheses
+                .replace(/(\[.*?]|\(.*?\))/g, '')
+                // Converts Tome abbreviations (e.g., TXX) to full text
+                .replace(/\bT(\d{2})\b/g, 'Tome $1')
+                .trim()
+        );
     }
 }
