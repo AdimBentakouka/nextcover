@@ -7,6 +7,6 @@ type Metadata = {
     isbn?: string;
     tags?: string;
     bookDisplayNumber?: number;
-    pageCount?: number;
     score?: number;
+    countPages?: number;
 };

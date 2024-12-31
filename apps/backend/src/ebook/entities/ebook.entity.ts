@@ -50,4 +50,7 @@ export class Ebook {
 
     @Column({default: 0})
     score: number;
+
+    @Column({default: 0})
+    countPages: number;
 }

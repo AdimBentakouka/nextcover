@@ -9,6 +9,7 @@ import {OnEvent} from '@nestjs/event-emitter';
 import {getFileInfo} from '../utils/file-utils';
 import {messages} from '../utils/messages';
 import {Library} from '../libraries/entities/library.entity';
+import {ReaderService} from '../reader/reader.service';
 
 /**
  * A constant array that defines the list of allowed file extensions for processing.
@@ -50,6 +51,7 @@ export class EbookService implements OnModuleInit {
         private readonly EbookRepository: Repository<Ebook>,
         private readonly librariesService: LibrariesService,
         private readonly metadataService: MetadataService,
+        private readonly readerService: ReaderService,
     ) {}
 
     async onModuleInit() {
@@ -147,16 +149,18 @@ export class EbookService implements OnModuleInit {
     private async getCompleteMetadata(
         fileInfo: FileInfo & {library: Library},
     ): Promise<Metadata> {
+        // already completed for epub
+        if (fileInfo.extension === '.epub') {
+            return await this.readerService.getMetadata(fileInfo.filepath);
+        }
+
         const metadata = await this.metadataService.getMetadata(
             fileInfo.fileName,
             fileInfo.library.metadataStrategy,
         );
 
         if (!metadata.thumbnail) {
-            metadata.thumbnail = await this.metadataService.generateThumbnail(
-                fileInfo.filepath,
-                fileInfo.extension,
-            );
+            metadata.thumbnail = 'Todo';
         }
 
         return metadata;

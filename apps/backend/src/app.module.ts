@@ -8,6 +8,7 @@ import {WatchFolderModule} from './watch-folder/watch-folder.module';
 import {EventEmitterModule} from '@nestjs/event-emitter';
 import {MetadataModule} from './metadata/metadata.module';
 import {EbookModule} from './ebook/ebook.module';
+import { ReaderModule } from './reader/reader.module';
 
 @Module({
     imports: [
@@ -25,6 +26,7 @@ import {EbookModule} from './ebook/ebook.module';
         WatchFolderModule,
         MetadataModule,
         EbookModule,
+        ReaderModule,
     ],
     controllers: [AppController],
     providers: [AppService],

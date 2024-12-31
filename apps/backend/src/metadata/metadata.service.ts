@@ -27,17 +27,7 @@ export class MetadataService {
             this.extractTitle(title),
         );
     }
-
-    async generateThumbnail(filepath: string, extension: string) {
-        // read first page
-
-        // generate name file for thumbnail
-
-        // save blob to .jpg into /public/cover/**.jpg
-
-        return '#TODO Generate thumbnail';
-    }
-
+    
     /**
      * Retrieves the metadata strategy based on the provided strategy type.
      *

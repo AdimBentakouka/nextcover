@@ -21,6 +21,11 @@ export const messages = {
             'Too Many Requests for title "{title}". Retrying ({retry}) in {delay}ms...',
         FETCH_GOOGLE_BOOKS_API_TOO_MANY_REQUESTS_FINAL: `Too Many Requests for title "{title}". Giving up.`,
         FETCH_GOOGLE_BOOKS_API_NOT_FOUND: `No results found for title "{title}".`,
+        UNKNOWN_READER: "Unknown reader '{reader}'.",
+        NOT_IMPLEMENTED: "Function '{functionName}' is not implemented.",
+        COVER_NOT_FOUND: "Cover not found for '{title}'.",
+        INVALID_NUMBER_PAGES:
+            "The page number must be between 1 and {maxPage}'.",
     },
     success: {
         LIBRARY_CREATED:
@@ -31,6 +36,7 @@ export const messages = {
             'Strategy for Google API Books mapped {ebookTitle} to {googleTitle} with score {score}',
         WATCH_FOLDER_SCAN_COMPLETED:
             'Initial scan completed. Ready for changes.',
-        EBOOK_CREATED: 'Ebook "{name}" was successfully created',
+        EBOOK_CREATED: 'Ebook "{title}" was successfully created',
+        COVER_CREATED: 'Cover "{path}" was successfully created',
     },
 };

@@ -39,3 +39,15 @@ export const getFileInfo = (filePath: string): FileInfo => {
         directoryName: basename(dirname(filePath)),
     };
 };
+
+/**
+ * Extracts the extension from the given file path.
+ *
+ * This function takes a file path as input and returns the file extension,
+ * including the leading dot. If the file path does not contain an extension,
+ * an empty string is returned.
+ *
+ * @param {string} filePath - The file path from which to extract the extension.
+ * @returns {string} The file extension, including the leading dot, or an empty string if none exists.
+ */
+export const getExtension = (filePath: string): string => extname(filePath);
