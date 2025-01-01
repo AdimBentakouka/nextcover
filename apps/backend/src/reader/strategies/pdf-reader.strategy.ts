@@ -5,7 +5,7 @@ import {GetPageParams, ReaderStrategy} from '../interfaces/reader-strategy.inter
  * It provides functionality to read and extract page content from a PDF file.
  */
 export class PdfReaderStrategy implements ReaderStrategy {
-    async getPage(params: GetPageParams): Promise<ArrayBuffer> {
-        return new ArrayBuffer();
+    async getPage(params: GetPageParams): Promise<ArrayBuffer[]> {
+        return [new ArrayBuffer()];
     }
 }

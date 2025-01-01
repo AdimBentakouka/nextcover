@@ -24,14 +24,23 @@ export class ReaderService {
 
     /**
      * Retrieves metadata from the provided file.
-     *
-     * @param {string} filePath - The path of the file for which metadata is to be fetched.
+     * @param title - Name of book
+     * @param filePath - filepath of book
+     * @param thumbnail - thumbnail filepath
      * @return {Promise<Metadata>} A promise resolving to the metadata object, including a thumbnail if the file has a cover.
      */
-    async getMetadata(filePath: string): Promise<Metadata> {
+    async getMetadata({
+        title,
+        filePath,
+        thumbnail,
+    }: {
+        title: string;
+        filePath: string;
+        thumbnail?: string;
+    }): Promise<Metadata> {
         const strategy = this.selectStrategy(getExtension(filePath));
 
-        if (!strategy?.getMetadata) {
+        if (!strategy?.extractMetadata) {
             throw new Error(
                 messages.errors.NOT_IMPLEMENTED.replace(
                     '{functionName}',
@@ -40,11 +49,14 @@ export class ReaderService {
             );
         }
 
-        const {cover, ...rest} = await strategy.getMetadata(filePath);
+        const {cover, ...rest} = await strategy.extractMetadata(
+            filePath,
+            thumbnail,
+        );
 
-        const thumbnail = this.createCoverFile(cover);
+        const newThumbnail = this.createCoverFile(cover);
 
-        return {...rest, thumbnail};
+        return {title, ...rest, thumbnail: newThumbnail ?? thumbnail};
     }
 
     /**

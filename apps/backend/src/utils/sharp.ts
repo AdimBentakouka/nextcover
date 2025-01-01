@@ -1,4 +1,4 @@
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 import {mkdirSync} from 'fs';
 import {dirname} from 'path';
 
@@ -8,7 +8,7 @@ import {dirname} from 'path';
  * @param {ArrayBuffer} buffer - The input buffer containing image data.
  * @returns {Promise<Buffer>} A promise that resolves to a buffer containing the image in WebP format.
  */
-export const convertImageToWebp = (buffer: ArrayBuffer) => {
+export const convertImageToWebp = (buffer: ArrayBuffer): Promise<Buffer> => {
     return sharp(buffer).webp({lossless: true}).toBuffer();
 };
 

@@ -13,7 +13,7 @@ export class EpubReaderStrategy implements ReaderStrategy {
      * @param {string} filePath - Path to the EPUB file
      * @returns {Promise<Metadata & {cover: ArrayBuffer}>} Metadata with cover image as an ArrayBuffer.
      */
-    async getMetadata(
+    async extractMetadata(
         filePath: string,
     ): Promise<Metadata & {cover: ArrayBuffer}> {
         const epub = await this.createEpubInstance(filePath);

@@ -1,3 +1,12 @@
+export type ExtendedMetadata = Metadata & {cover?: ArrayBuffer};
+export type BasicMetadata = Pick<
+    Metadata,
+    'thumbnail' | 'countPages' | 'score'
+> & {
+    cover?: ArrayBuffer;
+    thumbnail?: string;
+};
+
 export interface GetPageParams {
     filePath: string;
     startPage: number;
@@ -19,13 +28,13 @@ export interface ReaderStrategy {
      * @param {number} params.numberPage - The number of pages to retrieve starting from the startIndex.
      * @return {ArrayBuffer|string} An ArrayBuffer representing binary page content for non-EPUB files or a string representing textual content for EPUB files
      */
-    getPage: (params: GetPageParams) => Promise<ArrayBuffer | string>;
+    getPage: (params: GetPageParams) => Promise<ArrayBuffer[] | string>;
 
     /**
      * Retrieves metadata for a specified file.
-     * Only EPUB Strategy
      */
-    getMetadata?: (
+    extractMetadata?: (
         filePath: string,
-    ) => Promise<Metadata & {cover?: ArrayBuffer}>;
+        thumbnail?: string,
+    ) => Promise<ExtendedMetadata | BasicMetadata>;
 }

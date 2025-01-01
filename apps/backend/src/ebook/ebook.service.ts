@@ -133,7 +133,7 @@ export class EbookService implements OnModuleInit {
             ...metadata,
         });
 
-        await this.EbookRepository.save(ebook);
+        //await this.EbookRepository.save(ebook);
         return ebook;
     }
 
@@ -149,21 +149,42 @@ export class EbookService implements OnModuleInit {
     private async getCompleteMetadata(
         fileInfo: FileInfo & {library: Library},
     ): Promise<Metadata> {
-        // already completed for epub
-        if (fileInfo.extension === '.epub') {
-            return await this.readerService.getMetadata(fileInfo.filepath);
+        if (fileInfo.extension === 'epub') {
+            const readerMetadata = await this.readerService.getMetadata({
+                title: fileInfo.fileName,
+                filePath: fileInfo.filepath,
+            });
+
+            if (readerMetadata.score === 0) {
+                return readerMetadata;
+            }
+
+            const metadataAPI = await this.metadataService.getMetadata(
+                fileInfo.fileName,
+                fileInfo.library.metadataStrategy,
+            );
+
+            return {
+                ...metadataAPI,
+                ...readerMetadata,
+            };
         }
 
-        const metadata = await this.metadataService.getMetadata(
+        const metadataAPI = await this.metadataService.getMetadata(
             fileInfo.fileName,
             fileInfo.library.metadataStrategy,
         );
 
-        if (!metadata.thumbnail) {
-            metadata.thumbnail = 'Todo';
-        }
+        const readerMetadata = await this.readerService.getMetadata({
+            title: fileInfo.fileName,
+            filePath: fileInfo.filepath,
+            thumbnail: metadataAPI.thumbnail || undefined,
+        });
 
-        return metadata;
+        return {
+            ...metadataAPI,
+            ...readerMetadata,
+        };
     }
 
     /**

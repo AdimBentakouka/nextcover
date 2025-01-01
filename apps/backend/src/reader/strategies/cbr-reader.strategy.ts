@@ -1,4 +1,4 @@
-import {GetPageParams, ReaderStrategy} from '../interfaces/reader-strategy.interface';
+import {BasicMetadata, GetPageParams, ReaderStrategy} from '../interfaces/reader-strategy.interface';
 
 /**
  * Represents a strategy for reading CBR or RAR (Comic Book RAR) files.
@@ -6,7 +6,13 @@ import {GetPageParams, ReaderStrategy} from '../interfaces/reader-strategy.inter
  */
 
 export class CbrReaderStrategy implements ReaderStrategy {
-    async getPage(params: GetPageParams): Promise<ArrayBuffer> {
-        return new ArrayBuffer();
+    async getPage(params: GetPageParams): Promise<ArrayBuffer[]> {
+        return [new ArrayBuffer()];
+    }
+
+    async extractMetadata(filePath: string): Promise<BasicMetadata> {
+        return {
+            countPages: 0,
+        };
     }
 }
