@@ -8,6 +8,27 @@ import {messages} from '../../utils/messages';
  */
 export class EpubReaderStrategy implements ReaderStrategy {
     /**
+     * Retrieves the content of a specific page from a given file.
+     *
+     * @return {Promise<string>} A promise that resolves to the content of the requested page as a string.
+     */
+    async getPage({filePath, startPage}: GetPageParams): Promise<string> {
+        const adjustedPageNumber = startPage - 1;
+        const epub = await this.createEpubInstance(filePath);
+        const chapters = epub.flow;
+
+        if (adjustedPageNumber >= chapters.length || adjustedPageNumber < 0) {
+            throw new Error(
+                messages.errors.INVALID_NUMBER_PAGES.replace(
+                    '{maxPage}',
+                    chapters.length.toString(),
+                ),
+            );
+        }
+        return epub.getChapterAsync(chapters[adjustedPageNumber].id);
+    }
+
+    /**
      * Retrieves metadata information and cover image data from an EPUB file.
      *
      * @param {string} filePath - Path to the EPUB file
@@ -28,27 +49,6 @@ export class EpubReaderStrategy implements ReaderStrategy {
             cover: coverImage,
             countPages: epub.flow.length,
         };
-    }
-
-    /**
-     * Retrieves the content of a specific page from a given file.
-     *
-     * @return {Promise<string>} A promise that resolves to the content of the requested page as a string.
-     */
-    async getPage({filePath, startPage}: GetPageParams): Promise<string> {
-        const adjustedPageNumber = startPage - 1;
-        const epub = await this.createEpubInstance(filePath);
-        const chapters = epub.flow;
-
-        if (adjustedPageNumber >= chapters.length || adjustedPageNumber < 0) {
-            throw new Error(
-                messages.errors.INVALID_NUMBER_PAGES.replace(
-                    '{maxPage}',
-                    chapters.length.toString(),
-                ),
-            );
-        }
-        return epub.getChapterAsync(chapters[adjustedPageNumber].id);
     }
 
     /**
