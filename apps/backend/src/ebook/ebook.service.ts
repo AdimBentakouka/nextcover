@@ -22,14 +22,7 @@ import {ReaderService} from '../reader/reader.service';
  * - `.zip`: Compressed archive file in ZIP format.
  * - `.rar`: Compressed archive file in RAR format.
  */
-const ALLOWED_FILE_EXTENSIONS = [
-    '.epub',
-    '.pdf',
-    '.cbz',
-    '.cbr',
-    '.zip',
-    '.rar',
-];
+const ALLOWED_FILE_EXTENSIONS = ['.epub', '.cbz', '.cbr', '.zip', '.rar'];
 
 /**
  * EbookService handles operations related to e-books, including creation, updating,

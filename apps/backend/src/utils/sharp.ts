@@ -2,6 +2,8 @@ import sharp from 'sharp';
 import {mkdirSync} from 'fs';
 import {dirname} from 'path';
 
+sharp.cache(false);
+
 /**
  * Converts an image buffer to the WebP format.
  *
@@ -42,4 +44,10 @@ export const createImageFile = async ({
     } catch (e) {
         if (onError) onError(e);
     }
+};
+
+export const processImageBufferToArrayBuffer = (
+    buffer: Uint8Array<ArrayBuffer>,
+): Promise<ArrayBuffer> => {
+    return sharp(buffer).toBuffer();
 };

@@ -109,6 +109,7 @@ export class CbzReaderStrategy implements ReaderStrategy {
      * @param {StreamZip} zip - The zip archive object containing the desired page.
      * @param {ZipEntry} page - The specific entry representing the page to be extracted.
      * @return {ArrayBuffer} The content of the page as an ArrayBuffer.
+     *
      */
     private extractPage(zip: StreamZip, page: ZipEntry): ArrayBuffer {
         return zip.entryDataSync(page.name);

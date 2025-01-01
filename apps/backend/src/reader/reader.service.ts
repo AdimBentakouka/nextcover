@@ -1,6 +1,5 @@
 import {Injectable, Logger} from '@nestjs/common';
 import {EpubReaderStrategy} from './strategies/epub-reader.strategy';
-import {PdfReaderStrategy} from './strategies/pdf-reader.strategy';
 import {CbrReaderStrategy} from './strategies/cbr-reader.strategy';
 import {CbzReaderStrategy} from './strategies/cbz-reader.strategy';
 import {randomUUID} from 'node:crypto';
@@ -18,7 +17,6 @@ export class ReaderService {
     constructor(
         private readonly cbzReaderStrategy: CbzReaderStrategy,
         private readonly cbrReaderStrategy: CbrReaderStrategy,
-        private readonly pdfReaderStrategy: PdfReaderStrategy,
         private readonly EpubReaderStrategy: EpubReaderStrategy,
     ) {}
 
@@ -94,8 +92,6 @@ export class ReaderService {
         switch (strategy) {
             case '.epub':
                 return this.EpubReaderStrategy;
-            case '.pdf':
-                return this.pdfReaderStrategy;
             case '.cbr':
             case '.rar':
                 return this.cbrReaderStrategy;

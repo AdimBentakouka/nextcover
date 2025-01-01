@@ -1,4 +1,4 @@
-import {existsSync} from 'fs';
+import {existsSync, readFileSync} from 'fs';
 import {basename, dirname, extname} from 'path';
 
 /**
@@ -51,3 +51,13 @@ export const getFileInfo = (filePath: string): FileInfo => {
  * @returns {string} The file extension, including the leading dot, or an empty string if none exists.
  */
 export const getExtension = (filePath: string): string => extname(filePath);
+
+/**
+ * Reads the content of a specified file asynchronously and returns it as an ArrayBuffer.
+ *
+ * @param {string} filePath - The path to the file that needs to be read.
+
+ */
+export const openFile = (filePath: string): Buffer<ArrayBufferLike> => {
+    return readFileSync(filePath);
+};
