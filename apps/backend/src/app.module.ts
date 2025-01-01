@@ -6,9 +6,9 @@ import {TypeOrmModule} from '@nestjs/typeorm';
 import {LibrariesModule} from './libraries/libraries.module';
 import {WatchFolderModule} from './watch-folder/watch-folder.module';
 import {EventEmitterModule} from '@nestjs/event-emitter';
-import {MetadataModule} from './metadata/metadata.module';
+import {MetadataAPIModule} from './metadataAPI/metadataAPI.module';
 import {EbookModule} from './ebook/ebook.module';
-import { ReaderModule } from './reader/reader.module';
+import {ReaderModule} from './reader/reader.module';
 
 @Module({
     imports: [
@@ -24,7 +24,7 @@ import { ReaderModule } from './reader/reader.module';
         EventEmitterModule.forRoot(),
         LibrariesModule,
         WatchFolderModule,
-        MetadataModule,
+        MetadataAPIModule,
         EbookModule,
         ReaderModule,
     ],

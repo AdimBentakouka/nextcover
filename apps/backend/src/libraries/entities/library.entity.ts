@@ -6,7 +6,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import {MetadataStrategies} from '../../metadata/metadata.service';
+import {MetadataStrategies} from '../../metadataAPI/metadataAPI.service';
 import {Ebook} from '../../ebook/entities/ebook.entity';
 
 export enum LibraryTypes {

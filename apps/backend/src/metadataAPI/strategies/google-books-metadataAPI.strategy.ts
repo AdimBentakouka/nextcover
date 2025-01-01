@@ -1,5 +1,5 @@
 import {Injectable, Logger} from '@nestjs/common';
-import {MetadataStrategy} from '../interfaces/metadata-strategy.interface';
+import {MetadataStrategy} from '../interfaces/metadataAPI-strategy.interface';
 import {messages} from '../../utils/messages';
 import {wait} from '../../utils/wait';
 import {distance} from 'fastest-levenshtein';
@@ -9,8 +9,8 @@ const TOO_MANY_REQUESTS_STATUS = 429;
 const TOO_MANY_REQUESTS_DELAY = 2_000;
 
 @Injectable()
-export class GoogleBooksMetadataStrategy implements MetadataStrategy {
-    private readonly logger = new Logger(GoogleBooksMetadataStrategy.name);
+export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
+    private readonly logger = new Logger(GoogleBooksMetadataAPIStrategy.name);
     private readonly apiUrl = 'https://www.googleapis.com/books/v1/volumes';
 
     private readonly maxResults = '5';

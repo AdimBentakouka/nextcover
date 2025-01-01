@@ -1,7 +1,7 @@
 import {ApiProperty} from '@nestjs/swagger';
 
 import {IsDefined, IsEnum, IsString, Length} from 'class-validator';
-import {MetadataStrategies} from '../../metadata/metadata.service';
+import {MetadataStrategies} from '../../metadataAPI/metadataAPI.service';
 import {LibraryTypes} from '../entities/library.entity';
 
 export class CreateLibraryDto {

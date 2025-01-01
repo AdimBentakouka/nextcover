@@ -1,16 +1,16 @@
 import {Injectable} from '@nestjs/common';
-import {GoogleBooksMetadataStrategy} from './strategies/google-books-metadata.strategy';
+import {GoogleBooksMetadataAPIStrategy} from './strategies/google-books-metadataAPI.strategy';
 import {messages} from '../utils/messages';
-import {MetadataStrategy} from './interfaces/metadata-strategy.interface';
+import {MetadataStrategy} from './interfaces/metadataAPI-strategy.interface';
 
 export enum MetadataStrategies {
     GOOGLE_BOOKS = 'Google Books API',
 }
 
 @Injectable()
-export class MetadataService {
+export class MetadataAPIService {
     constructor(
-        private readonly googleBookMetadataStrategy: GoogleBooksMetadataStrategy,
+        private readonly googleBookMetadataStrategy: GoogleBooksMetadataAPIStrategy,
     ) {}
 
     /**
@@ -27,7 +27,7 @@ export class MetadataService {
             this.extractTitle(title),
         );
     }
-    
+
     /**
      * Retrieves the metadata strategy based on the provided strategy type.
      *

@@ -3,7 +3,7 @@ import {InjectRepository} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';
 import {Ebook} from './entities/ebook.entity';
 import {LibrariesService} from '../libraries/libraries.service';
-import {MetadataService} from '../metadata/metadata.service';
+import {MetadataAPIService} from '../metadataAPI/metadataAPI.service';
 import {AppEvents} from '../utils/event-constants';
 import {OnEvent} from '@nestjs/event-emitter';
 import {getFileInfo} from '../utils/file-utils';
@@ -50,7 +50,7 @@ export class EbookService implements OnModuleInit {
         @InjectRepository(Ebook)
         private readonly EbookRepository: Repository<Ebook>,
         private readonly librariesService: LibrariesService,
-        private readonly metadataService: MetadataService,
+        private readonly metadataService: MetadataAPIService,
         private readonly readerService: ReaderService,
     ) {}
 
