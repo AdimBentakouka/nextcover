@@ -126,7 +126,7 @@ export class EbookService implements OnModuleInit {
             ...metadata,
         });
 
-        //await this.EbookRepository.save(ebook);
+        await this.EbookRepository.save(ebook);
         return ebook;
     }
 
