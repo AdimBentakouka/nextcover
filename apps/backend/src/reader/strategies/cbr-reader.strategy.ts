@@ -100,7 +100,9 @@ export class CbrReaderStrategy implements ReaderStrategy {
     ): FileHeader[] {
         const rarEntries = rar.getFileList();
 
-        return [...rarEntries.fileHeaders]
+        const fileHeaders = [...rarEntries.fileHeaders];
+
+        return fileHeaders
             .filter(
                 (header) =>
                     !header.flags.directory && this.isImageFile(header.name),

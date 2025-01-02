@@ -1,5 +1,6 @@
 import {existsSync, readFileSync} from 'fs';
 import {basename, dirname, extname} from 'path';
+import {rmSync} from 'node:fs';
 
 /**
  * Checks if the specified file or directory path exists.
@@ -56,8 +57,17 @@ export const getExtension = (filePath: string): string => extname(filePath);
  * Reads the content of a specified file asynchronously and returns it as an ArrayBuffer.
  *
  * @param {string} filePath - The path to the file that needs to be read.
-
  */
 export const openFile = (filePath: string): Buffer<ArrayBufferLike> => {
     return readFileSync(filePath);
+};
+
+/**
+ * Removes a file at the specified file path.
+ *
+ * @param {string} filePath - The absolute or relative path of the file to be removed.
+ * @returns {void}
+ */
+export const removeFile = (filePath: string): void => {
+    return rmSync(filePath);
 };

@@ -1,15 +1,16 @@
 import {Injectable, Logger, OnModuleInit} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {Repository} from 'typeorm';
+import {In, Not, Repository} from 'typeorm';
 import {Ebook} from './entities/ebook.entity';
 import {LibrariesService} from '../libraries/libraries.service';
 import {MetadataAPIService} from '../metadataAPI/metadataAPI.service';
 import {AppEvents} from '../utils/event-constants';
 import {OnEvent} from '@nestjs/event-emitter';
-import {getFileInfo} from '../utils/file-utils';
+import {checkPathExists, getFileInfo} from '../utils/file-utils';
 import {messages} from '../utils/messages';
 import {Library} from '../libraries/entities/library.entity';
 import {ReaderService} from '../reader/reader.service';
+import {rmSync} from 'node:fs';
 
 /**
  * A constant array that defines the list of allowed file extensions for processing.
@@ -68,27 +69,16 @@ export class EbookService implements OnModuleInit {
             return;
         }
 
-        const metadata = await this.getCompleteMetadata(fileInfo);
+        try {
+            const metadata = await this.getCompleteMetadata(fileInfo);
 
-        const ebook = await this.createAndSaveEbook(fileInfo, metadata);
+            const ebook = await this.createAndSaveEbook(fileInfo, metadata);
 
-        return this.logger.log(
-            messages.success.EBOOK_CREATED.replace('{title}', ebook.title),
-        );
-    }
-
-    /**
-     * Creates multiple resources based on the provided file paths.
-     *
-     * @param {string[]} filePaths - An array of file paths to be processed.
-     * @return {Promise<void>} A promise that resolves when all resources have been created.
-     */
-    async createBulk(filePaths: string[]): Promise<void> {
-        if (filePaths.length === 0) {
-            return;
-        }
-        for (const filePath of filePaths) {
-            await this.create(filePath);
+            return this.logger.log(
+                messages.success.EBOOK_CREATED.replace('{title}', ebook.title),
+            );
+        } catch (error) {
+            this.logger.error(error);
         }
     }
 
@@ -106,7 +96,31 @@ export class EbookService implements OnModuleInit {
      * @param {string} filepath - The path of the file to be removed.
      * @return {void} Does not return any value.
      */
-    remove(filepath: string): void {}
+    async remove(filepath: string): Promise<void> {
+        try {
+            const ebook = await this.EbookRepository.findOne({
+                where: {
+                    filepath,
+                },
+            });
+
+            if (ebook) {
+                if (checkPathExists(filepath)) {
+                    rmSync(filepath);
+                }
+                if (
+                    !ebook.thumbnail.startsWith('https://') &&
+                    checkPathExists(ebook.thumbnail)
+                ) {
+                    rmSync(ebook.thumbnail);
+                }
+
+                await this.EbookRepository.remove(ebook);
+            }
+        } catch (error) {
+            this.logger.error(error);
+        }
+    }
 
     /**
      * Updates the libraries by fetching all available entries from the libraries service.
@@ -169,7 +183,7 @@ export class EbookService implements OnModuleInit {
         );
 
         const readerMetadata = await this.readerService.getMetadata({
-            title: fileInfo.fileName,
+            title: metadataAPI.title || fileInfo.fileName,
             filePath: fileInfo.filepath,
             thumbnail: metadataAPI.thumbnail || undefined,
         });
@@ -199,7 +213,21 @@ export class EbookService implements OnModuleInit {
                 ),
         );
 
-        await this.createBulk(ebooksNotCreated.map(({filepath}) => filepath));
+        await Promise.all(
+            ebooksNotCreated.map(({filepath}) => this.create(filepath)),
+        );
+
+        const ebooksToDelete = await this.EbookRepository.find({
+            where: {
+                filepath: Not(
+                    In(this.unprocessedFilePath.map(({filepath}) => filepath)),
+                ),
+            },
+        });
+
+        await Promise.all(
+            ebooksToDelete.map((ebook) => this.remove(ebook.filepath)),
+        );
     }
 
     /**

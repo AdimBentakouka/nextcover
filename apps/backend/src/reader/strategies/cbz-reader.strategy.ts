@@ -50,6 +50,8 @@ export class CbzReaderStrategy implements ReaderStrategy {
             );
         }
 
+        zipInstance.close();
+
         return pageBuffers;
     }
 
@@ -66,6 +68,8 @@ export class CbzReaderStrategy implements ReaderStrategy {
     ): Promise<BasicMetadata> {
         const zipInstance = await this.createZipInstance(filePath);
         const pages = this.getSortedImageEntries(zipInstance);
+
+        zipInstance.close();
 
         return {
             countPages: pages.length,
@@ -133,6 +137,7 @@ export class CbzReaderStrategy implements ReaderStrategy {
                 resolve(zip);
             });
             zip.on('error', (err) => {
+                console.log(err);
                 reject(err);
             });
         });
