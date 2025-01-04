@@ -41,9 +41,8 @@ export class CbrReaderStrategy implements ReaderStrategy {
             startPage + pageCount > sortedImageEntries.length
         ) {
             throw new Error(
-                messages.errors.INVALID_NUMBER_PAGES.replace(
-                    '{maxPage}',
-                    sortedImageEntries.length.toString(),
+                messages.errors.reader.invalidRangePages(
+                    sortedImageEntries.length,
                 ),
             );
         }

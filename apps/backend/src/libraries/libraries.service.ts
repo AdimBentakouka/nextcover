@@ -47,10 +47,10 @@ export class LibrariesService {
             this.eventEmitter.emit(AppEvents.LIBRARIES_UPDATED);
 
             this.logger.log(
-                messages.success.LIBRARY_CREATED.replace(
-                    '{name}',
+                messages.success.library.created(
                     createResult.name,
-                ).replace('{path}', createResult.path),
+                    createResult.path,
+                ),
             );
 
             return createResult;
@@ -60,10 +60,7 @@ export class LibrariesService {
                 error.message.includes('UNIQUE constraint failed: library.path')
             ) {
                 throw new ConflictException(
-                    messages.errors.LIBRARY_PATH_ALREADY_EXISTS.replace(
-                        '{path}',
-                        createLibraryDto.path,
-                    ),
+                    messages.errors.path.alreadyUsed(createLibraryDto.path),
                 );
             }
             this.logger.error(error);
@@ -96,9 +93,7 @@ export class LibrariesService {
         });
 
         if (!library) {
-            throw new NotFoundException(
-                messages.errors.LIBRARY_NOT_FOUND.replace('{id}', id),
-            );
+            throw new NotFoundException(messages.errors.library.notFound(id));
         }
 
         return library;
@@ -132,9 +127,7 @@ export class LibrariesService {
                 this.eventEmitter.emit(AppEvents.LIBRARIES_UPDATED);
             }
 
-            this.logger.log(
-                messages.success.LIBRARY_UPDATED.replace('{name}', name),
-            );
+            this.logger.log(messages.success.library.updated(name));
 
             return updateResult;
         } catch (error) {
@@ -156,8 +149,7 @@ export class LibrariesService {
             const deleteResult = await this.libraryRepository.delete(id);
 
             if (deleteResult.affected) {
-                const deletionMessage =
-                    messages.success.LIBRARY_DELETED.replace('{id}', id);
+                const deletionMessage = messages.success.library.deleted(id);
 
                 this.logger.log(deletionMessage);
                 this.eventEmitter.emit(AppEvents.LIBRARIES_UPDATED);
@@ -167,9 +159,7 @@ export class LibrariesService {
                 };
             }
 
-            throw new NotFoundException(
-                messages.errors.LIBRARY_NOT_FOUND.replace('{id}', id),
-            );
+            throw new NotFoundException(messages.errors.library.notFound(id));
         } catch (error) {
             this.logger.error(error);
             throw error;
@@ -185,9 +175,7 @@ export class LibrariesService {
      */
     private async handlePathNotExist(path: string): Promise<void> {
         if (!checkPathExists(path)) {
-            throw new ConflictException(
-                messages.errors.PATH_NOT_EXIST_FS.replace('{path}', path),
-            );
+            throw new ConflictException(messages.errors.path.notExist(path));
         }
     }
 }

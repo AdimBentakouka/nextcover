@@ -77,9 +77,7 @@ export class EbookService implements OnModuleInit {
 
             const ebook = await this.createAndSaveEbook(fileInfo, metadata);
 
-            return this.logger.log(
-                messages.success.EBOOK_CREATED.replace('{title}', ebook.title),
-            );
+            return this.logger.log(messages.success.ebook.created(ebook.title));
         } catch (error) {
             this.logger.error(error);
         }
@@ -116,10 +114,7 @@ export class EbookService implements OnModuleInit {
             const updateResult = await this.ebookRepository.save(newEbook);
 
             this.logger.log(
-                messages.success.EBOOK_UPDATED.replace(
-                    '{name}',
-                    title ?? ebook.title,
-                ),
+                messages.success.ebook.updated(title ?? ebook.title),
             );
 
             return updateResult;
@@ -144,7 +139,7 @@ export class EbookService implements OnModuleInit {
 
             if (!ebook)
                 throw new NotFoundException(
-                    messages.errors.EBOOK_NOT_FOUND.replace('{id}', filepath),
+                    messages.errors.ebook.notFound(filepath),
                 );
 
             if (checkPathExists(ebook.filepath)) {
@@ -177,9 +172,7 @@ export class EbookService implements OnModuleInit {
         });
 
         if (!ebook) {
-            throw new NotFoundException(
-                messages.errors.EBOOK_NOT_FOUND.replace('{id}', id),
-            );
+            throw new NotFoundException(messages.errors.ebook.notFound(id));
         }
 
         if (checkPathExists(ebook.filepath)) {
@@ -187,10 +180,7 @@ export class EbookService implements OnModuleInit {
         }
 
         return {
-            message: messages.success.EBOOK_DELETED.replace(
-                '{name}',
-                ebook.title,
-            ),
+            message: messages.success.ebook.deleted(ebook.title),
         };
     }
 
@@ -208,9 +198,7 @@ export class EbookService implements OnModuleInit {
         });
 
         if (!ebook) {
-            throw new NotFoundException(
-                messages.errors.EBOOK_NOT_FOUND.replace('{id}', id),
-            );
+            throw new NotFoundException(messages.errors.ebook.notFound(id));
         }
 
         return ebook;
@@ -363,10 +351,7 @@ export class EbookService implements OnModuleInit {
         if (!this.isAllowedFileExtension(fileInfo.extension)) {
             if (this.scanCompleted)
                 this.logger.warn(
-                    messages.errors.FILE_EXTENSION_NOT_ALLOWED.replace(
-                        '{fileName}',
-                        filepath,
-                    ),
+                    messages.errors.file.extensionNotAllowed(filepath),
                 );
 
             return null;
@@ -414,9 +399,7 @@ export class EbookService implements OnModuleInit {
             imageBuffer: file,
             onError: (e) => this.logger.warn(e),
         }).then(() => {
-            this.logger.log(
-                messages.success.COVER_CREATED.replace('{path}', filePath),
-            );
+            this.logger.log(messages.success.ebook.coverCreated(filePath));
         });
 
         return filePath;

@@ -35,12 +35,7 @@ export class ReaderService {
         const strategy = this.selectStrategy(getExtension(filePath));
 
         if (!strategy?.extractMetadata) {
-            throw new Error(
-                messages.errors.NOT_IMPLEMENTED.replace(
-                    '{functionName}',
-                    'getMetadata',
-                ),
-            );
+            throw new Error(messages.errors.notImplemented('extractMetadata'));
         }
 
         const metadata = await strategy.extractMetadata(filePath, thumbnail);
@@ -51,11 +46,11 @@ export class ReaderService {
     /**
      * Selects and returns the appropriate reader strategy based on the given file extension.
      *
-     * @param {string} strategy - The file extension representing the type of reader strategy to use.
+     * @param {string} reader - The file extension representing the type of reader strategy to use.
      * @return {ReaderStrategy} The corresponding reader strategy for the given file extension.
      */
-    private selectStrategy(strategy: string): ReaderStrategy {
-        switch (strategy) {
+    private selectStrategy(reader: string): ReaderStrategy {
+        switch (reader) {
             case '.epub':
                 return this.EpubReaderStrategy;
             case '.cbr':
@@ -65,12 +60,7 @@ export class ReaderService {
             case '.zip':
                 return this.cbzReaderStrategy;
             default:
-                throw new Error(
-                    messages.errors.UNKNOWN_READER.replace(
-                        '{reader}',
-                        strategy,
-                    ),
-                );
+                throw new Error(messages.errors.reader.unknownReader(reader));
         }
     }
 }

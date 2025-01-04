@@ -30,9 +30,7 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
         delay: number = TOO_MANY_REQUESTS_DELAY,
         retry: number = 0,
     ): Promise<Metadata> {
-        this.logger.log(
-            messages.logs.FETCH_GOOGLE_BOOKS_API.replace('{title}', ebookTitle),
-        );
+        this.logger.log(messages.logs.googleBooksApi.fetching(ebookTitle));
 
         const response = await this.fetchWithRetry(ebookTitle, delay, retry);
 
@@ -40,10 +38,7 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
 
         if (data.totalItems === 0) {
             this.logger.warn(
-                messages.errors.FETCH_GOOGLE_BOOKS_API_NOT_FOUND.replace(
-                    '{title}',
-                    ebookTitle,
-                ),
+                messages.errors.googleBooksApi.notFound(ebookTitle),
             );
 
             return {
@@ -52,7 +47,7 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
             };
         }
 
-        const metadatas: Metadata[] = data.items.map(
+        const metadataList: Metadata[] = data.items.map(
             (
                 {
                     volumeInfo: {
@@ -89,16 +84,13 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
             }),
         );
 
-        const bestMatches = metadatas
+        const bestMatches = metadataList
             .filter(({score}) => score <= this.distanceThreshold)
             .sort((a, b) => a.score - b.score);
 
         if (bestMatches.length === 0) {
             this.logger.warn(
-                messages.errors.FETCH_GOOGLE_BOOKS_API_NOT_FOUND.replace(
-                    '{title}',
-                    ebookTitle,
-                ),
+                messages.errors.googleBooksApi.notFound(ebookTitle),
             );
 
             return {
@@ -108,12 +100,11 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
         }
 
         this.logger.log(
-            messages.success.GOOGLE_BOOKS_API_TITLE_MAPPED.replace(
-                '{ebookTitle}',
+            messages.success.googleBooksApi.titleMapped(
                 ebookTitle,
-            )
-                .replace('{googleTitle}', bestMatches[0].title)
-                .replace('{score}', bestMatches[0].score.toString()),
+                bestMatches[0].title,
+                bestMatches[0].score,
+            ),
         );
 
         return bestMatches[0];
@@ -136,18 +127,16 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
 
         if (!response.ok && response.status === TOO_MANY_REQUESTS_STATUS) {
             this.logger.warn(
-                messages.errors.FETCH_GOOGLE_BOOKS_API_TOO_MANY_REQUESTS.replace(
-                    '{title}',
+                messages.errors.googleBooksApi.tooManyRequests(
                     ebookTitle,
-                )
-                    .replace('{retry}', (retry + 1).toString())
-                    .replace('{delay}', delay.toString()),
+                    retry + 1,
+                    delay,
+                ),
             );
 
             if (retry >= MAX_RETRIES) {
                 throw new Error(
-                    messages.errors.FETCH_GOOGLE_BOOKS_API_TOO_MANY_REQUESTS_FINAL.replace(
-                        '{title}',
+                    messages.errors.googleBooksApi.tooManyRequestsFinal(
                         ebookTitle,
                     ),
                 );

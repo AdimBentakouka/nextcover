@@ -87,37 +87,28 @@ export class WatchFolderService implements OnModuleInit {
             .on('add', async (filePath) => {
                 if (initialScanCompleted) {
                     this.logger.log(
-                        messages.logs.WATCH_FOLDER_FILE_ADDED.replace(
-                            '{path}',
-                            filePath,
-                        ),
+                        messages.logs.watchFolder.fileAdded(filePath),
                     );
                 }
                 await this.ebookService.create(filePath);
             })
             .on('change', (filePath) => {
                 this.logger.log(
-                    messages.logs.WATCH_FOLDER_FILE_CHANGED.replace(
-                        '{path}',
-                        filePath,
-                    ),
+                    messages.logs.watchFolder.fileChanged(filePath),
                 );
 
                 //Update CountPage and Cover;
             })
             .on('unlink', async (filePath) => {
                 this.logger.log(
-                    messages.logs.WATCH_FOLDER_FILE_REMOVED.replace(
-                        '{path}',
-                        filePath,
-                    ),
+                    messages.logs.watchFolder.fileRemoved(filePath),
                 );
 
                 await this.ebookService.remove(filePath);
             })
             .on('ready', () => {
                 initialScanCompleted = true;
-                this.logger.log(messages.success.WATCH_FOLDER_SCAN_COMPLETED);
+                this.logger.log(messages.success.watchFolder.scanCompleted());
 
                 this.eventEmitter.emit(
                     AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED,
@@ -139,17 +130,14 @@ export class WatchFolderService implements OnModuleInit {
 
             if (!checkPathExists(path)) {
                 missingFolders.push(path);
-                return this.logger.warn(
-                    messages.errors.PATH_NOT_EXIST_FS.replace('{path}', path),
-                );
+                return this.logger.warn(messages.errors.path.notExist(path));
             }
 
             this.watcher.add(path);
         });
 
         this.logger.log(
-            messages.logs.WATCH_FOLDER_WATCHED.replace(
-                '{paths}',
+            messages.logs.watchFolder.watched(
                 targetPaths
                     .filter((v) => !missingFolders.includes(v))
                     .join('","'),
@@ -167,10 +155,7 @@ export class WatchFolderService implements OnModuleInit {
         unWatchedFolders.forEach((path) => this.watcher.unwatch(path));
 
         this.logger.log(
-            messages.logs.WATCH_FOLDER_UNWATCHED.replace(
-                '{paths}',
-                unWatchedFolders.join('","'),
-            ),
+            messages.logs.watchFolder.unwatched(unWatchedFolders.join('","')),
         );
     }
 }

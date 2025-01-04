@@ -32,10 +32,7 @@ export class CbzReaderStrategy implements ReaderStrategy {
 
         if (startPage <= 0 || startPage + pageCount > pages.length) {
             throw new Error(
-                messages.errors.INVALID_NUMBER_PAGES.replace(
-                    '{maxPage}',
-                    pages.length.toString(),
-                ),
+                messages.errors.reader.invalidRangePages(pages.length),
             );
         }
 
@@ -136,7 +133,6 @@ export class CbzReaderStrategy implements ReaderStrategy {
                 resolve(zip);
             });
             zip.on('error', (err) => {
-                console.log(err);
                 reject(err);
             });
         });

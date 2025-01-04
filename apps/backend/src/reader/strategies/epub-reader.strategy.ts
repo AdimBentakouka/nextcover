@@ -19,10 +19,7 @@ export class EpubReaderStrategy implements ReaderStrategy {
 
         if (adjustedPageNumber >= chapters.length || adjustedPageNumber < 0) {
             throw new Error(
-                messages.errors.INVALID_NUMBER_PAGES.replace(
-                    '{maxPage}',
-                    chapters.length.toString(),
-                ),
+                messages.errors.reader.invalidRangePages(chapters.length),
             );
         }
         return epub.getChapterAsync(chapters[adjustedPageNumber].id);
@@ -65,10 +62,7 @@ export class EpubReaderStrategy implements ReaderStrategy {
 
         if (!coverImageId)
             throw new NotFoundException(
-                messages.errors.COVER_NOT_FOUND.replace(
-                    '{title}',
-                    epub.metadata.title,
-                ),
+                messages.errors.reader.coverNotFound(epub.metadata.title),
             );
 
         const [coverImage] = await epub.getImageAsync(coverImageId);

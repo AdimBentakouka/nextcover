@@ -42,10 +42,7 @@ export class MetadataAPIService {
                 return this.googleBookMetadataStrategy;
             default:
                 throw new Error(
-                    messages.errors.UNKNOWN_METADATA_STRATEGY.replace(
-                        '{metadataStrategy}',
-                        metadataStrategy,
-                    ),
+                    messages.errors.metadata.unknownStrategy(metadataStrategy),
                 );
         }
     }
