@@ -84,7 +84,11 @@ export class EbookService implements OnModuleInit {
     }
 
     /**
-     * Updates the content or state based on the provided file path.
+     * Updates an existing ebook with the provided data and optional file.
+     *
+     * @param {string} id - The unique identifier of the ebook to update.
+     * @param {UpdateEbookDto} updateEbookDto - Data transfer object containing the updated ebook details.
+     * @param {Express.Multer.File} [file] - Optional file containing a new thumbnail or related ebook content.
      */
     async update(
         id: string,
@@ -96,15 +100,12 @@ export class EbookService implements OnModuleInit {
             const {title} = updateEbookDto;
 
             if (file) {
-                if (
-                    !ebook.thumbnail.startsWith('https://') &&
-                    checkPathExists(ebook.thumbnail)
-                ) {
-                    removeFile(ebook.thumbnail);
-                }
+                this.removeFileIfExists(ebook.filepath);
+
                 const bufferImage = openFile(file.path);
                 ebook.thumbnail = this.createCover(bufferImage);
-                removeFile(file.path);
+
+                this.removeFileIfExists(file.path);
             }
 
             const newEbook = this.ebookRepository.merge(ebook, updateEbookDto, {
@@ -142,15 +143,8 @@ export class EbookService implements OnModuleInit {
                     messages.errors.ebook.notFound(filepath),
                 );
 
-            if (checkPathExists(ebook.filepath)) {
-                removeFile(ebook.filepath);
-            }
-            if (
-                !ebook.thumbnail.startsWith('https://') &&
-                checkPathExists(ebook.thumbnail)
-            ) {
-                removeFile(ebook.thumbnail);
-            }
+            this.removeFileIfExists(ebook.filepath);
+            this.removeFileIfExists(ebook.thumbnail);
 
             await this.ebookRepository.remove(ebook);
         } catch (error) {
@@ -175,9 +169,7 @@ export class EbookService implements OnModuleInit {
             throw new NotFoundException(messages.errors.ebook.notFound(id));
         }
 
-        if (checkPathExists(ebook.filepath)) {
-            removeFile(ebook.filepath);
-        }
+        this.removeFileIfExists(ebook.filepath);
 
         return {
             message: messages.success.ebook.deleted(ebook.title),
@@ -295,7 +287,7 @@ export class EbookService implements OnModuleInit {
      * Handles the event when the initial folder scan is completed.
      * Performs actions such as creating and deleting bulk entries as part of post-scan handling.
      * Trigger by **AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED**
-     * @return {void}
+     * @return {Promise<void>}
      */
     @OnEvent(AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED)
     private async onScanCompleted(): Promise<void> {
@@ -328,10 +320,10 @@ export class EbookService implements OnModuleInit {
     }
 
     /**
-     * Checks if the provided file name has an allowed file extension.
+     * Checks if the provided file extension is allowed.
      *
-     * @return {boolean} Returns true if the file has an allowed extension, otherwise false.
-     * @param extension
+     * @param {string} extension - The file extension to be checked.
+     * @return {boolean} Returns true if the file extension is allowed, otherwise false.
      */
     private isAllowedFileExtension(extension: string): boolean {
         return ALLOWED_FILE_EXTENSIONS.includes(extension);
@@ -341,7 +333,7 @@ export class EbookService implements OnModuleInit {
      * Safely retrieves file information if the file has an allowed extension.
      *
      * @param {string} filepath - The path of the file to retrieve information for.
-     * @return {FileInfo | null} Returns the file information if the file has an allowed extension; otherwise, returns null.
+     * @return {(FileInfo & {title: string; library: Library}) | null} Returns the file information if the file has an allowed extension; otherwise, returns null.
      */
     private safeGetFileInfo(
         filepath: string,
@@ -389,6 +381,12 @@ export class EbookService implements OnModuleInit {
         );
     }
 
+    /**
+     * Creates a cover image file from the provided file buffer and saves it to a predefined folder.
+     *
+     * @param {ArrayBuffer} file The file buffer to be used for creating the cover image.
+     * @return {string | undefined} The file path of the created cover image, or undefined if the input file is invalid.
+     */
     private createCover(file: ArrayBuffer): string | undefined {
         if (!file) return undefined;
 
@@ -403,5 +401,18 @@ export class EbookService implements OnModuleInit {
         });
 
         return filePath;
+    }
+
+    /**
+     * Removes a file at the specified path if it exists and the path is not a URL.
+     *
+     * @param {string} path - The path to the file to be removed. The file will only be removed
+     *                        if the path does not start with 'https://' and the file exists.
+     * @return {void} This method does not return any value.
+     */
+    private removeFileIfExists(path: string): void {
+        if (!path.startsWith('https://') && checkPathExists(path)) {
+            removeFile(path);
+        }
     }
 }

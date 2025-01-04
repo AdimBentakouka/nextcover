@@ -86,11 +86,7 @@ export class EbookController {
         @Body() updateEbookDto: UpdateEbookDto,
         @UploadedFile() file: Express.Multer.File,
     ) {
-        try {
-            return await this.ebookService.update(id, updateEbookDto, file);
-        } catch (e) {
-            console.log(e);
-        }
+        return await this.ebookService.update(id, updateEbookDto, file);
     }
 
     @Delete(':id')
