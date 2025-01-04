@@ -2,13 +2,9 @@ import {Injectable, Logger} from '@nestjs/common';
 import {EpubReaderStrategy} from './strategies/epub-reader.strategy';
 import {CbrReaderStrategy} from './strategies/cbr-reader.strategy';
 import {CbzReaderStrategy} from './strategies/cbz-reader.strategy';
-import {randomUUID} from 'node:crypto';
 import {ReaderStrategy} from './interfaces/reader-strategy.interface';
 import {messages} from '../utils/messages';
 import {getExtension} from '../utils/file-utils';
-import {createImageFile} from '../utils/sharp';
-
-const FOLDER_COVER = './public/covers';
 
 @Injectable()
 export class ReaderService {
@@ -35,7 +31,7 @@ export class ReaderService {
         title: string;
         filePath: string;
         thumbnail?: string;
-    }): Promise<Metadata> {
+    }): Promise<ExtendedMetadata | (BasicMetadata & {title: string})> {
         const strategy = this.selectStrategy(getExtension(filePath));
 
         if (!strategy?.extractMetadata) {
@@ -47,39 +43,9 @@ export class ReaderService {
             );
         }
 
-        const {cover, ...rest} = await strategy.extractMetadata(
-            filePath,
-            thumbnail,
-        );
+        const metadata = await strategy.extractMetadata(filePath, thumbnail);
 
-        const newThumbnail = this.createCoverFile(cover);
-
-        return {title, ...rest, thumbnail: newThumbnail ?? thumbnail};
-    }
-
-    /**
-     * Creates a cover file from the given image data and stores it in the designated directory.
-     *
-     * @param {ArrayBuffer} image - The binary data of the image to be saved as a cover file.
-     * @return {string | undefined} The file path of the saved cover file if successful, or undefined if the image data is not provided.
-     */
-    private createCoverFile(image: ArrayBuffer): string | undefined {
-        if (!image) return undefined;
-
-        const fileName = randomUUID();
-        const coverPath = `${FOLDER_COVER}/${fileName}.webp`;
-
-        createImageFile({
-            filePath: coverPath,
-            image: image,
-            onError: (e) => this.logger.warn(e),
-        }).then(() =>
-            this.logger.log(
-                messages.success.COVER_CREATED.replace('{path}', coverPath),
-            ),
-        );
-
-        return coverPath;
+        return {title, ...metadata};
     }
 
     /**

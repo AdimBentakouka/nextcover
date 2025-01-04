@@ -1,12 +1,3 @@
-export type ExtendedMetadata = Metadata & {cover?: ArrayBuffer};
-export type BasicMetadata = Pick<
-    Metadata,
-    'thumbnail' | 'countPages' | 'score'
-> & {
-    cover?: ArrayBuffer;
-    thumbnail?: string;
-};
-
 export interface GetPageParams {
     filePath: string;
     startPage: number;

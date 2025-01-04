@@ -93,7 +93,7 @@ export class WatchFolderService implements OnModuleInit {
                         ),
                     );
                 }
-                this.ebookService.create(filePath);
+                await this.ebookService.create(filePath);
             })
             .on('change', (filePath) => {
                 this.logger.log(
@@ -103,9 +103,9 @@ export class WatchFolderService implements OnModuleInit {
                     ),
                 );
 
-                this.ebookService.update(filePath);
+                //Update CountPage and Cover;
             })
-            .on('unlink', (filePath) => {
+            .on('unlink', async (filePath) => {
                 this.logger.log(
                     messages.logs.WATCH_FOLDER_FILE_REMOVED.replace(
                         '{path}',
@@ -113,7 +113,7 @@ export class WatchFolderService implements OnModuleInit {
                     ),
                 );
 
-                this.ebookService.remove(filePath);
+                await this.ebookService.remove(filePath);
             })
             .on('ready', () => {
                 initialScanCompleted = true;

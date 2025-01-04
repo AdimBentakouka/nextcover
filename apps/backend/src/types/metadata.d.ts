@@ -10,3 +10,9 @@ type Metadata = {
     score?: number;
     countPages?: number;
 };
+
+type ExtendedMetadata = Metadata & {cover?: ArrayBuffer};
+type BasicMetadata = Pick<Metadata, 'thumbnail' | 'countPages' | 'score'> & {
+    cover?: ArrayBuffer;
+    thumbnail?: string;
+};

@@ -1,4 +1,4 @@
-import {Injectable, Logger, OnModuleInit} from '@nestjs/common';
+import {Injectable, Logger, NotFoundException, OnModuleInit} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {In, Not, Repository} from 'typeorm';
 import {Ebook} from './entities/ebook.entity';
@@ -6,18 +6,20 @@ import {LibrariesService} from '../libraries/libraries.service';
 import {MetadataAPIService} from '../metadataAPI/metadataAPI.service';
 import {AppEvents} from '../utils/event-constants';
 import {OnEvent} from '@nestjs/event-emitter';
-import {checkPathExists, getFileInfo} from '../utils/file-utils';
+import {checkPathExists, getFileInfo, openFile, removeFile} from '../utils/file-utils';
 import {messages} from '../utils/messages';
 import {Library} from '../libraries/entities/library.entity';
 import {ReaderService} from '../reader/reader.service';
-import {rmSync} from 'node:fs';
+import {UpdateEbookDto} from './dto/update-ebook.dto';
+import {randomUUID} from 'node:crypto';
+import {createImageFile} from '../utils/sharp';
+import {ConfigService} from '@nestjs/config';
 
 /**
  * A constant array that defines the list of allowed file extensions for processing.
  *
  * The supported file extensions are:
  * - `.epub`: Common eBook format for digital publications.
- * - `.pdf`: Portable Document Format, widely used for documents.
  * - `.cbz`: Comic Book Archive file in ZIP format.
  * - `.cbr`: Comic Book Archive file in RAR format.
  * - `.zip`: Compressed archive file in ZIP format.
@@ -42,10 +44,11 @@ export class EbookService implements OnModuleInit {
 
     constructor(
         @InjectRepository(Ebook)
-        private readonly EbookRepository: Repository<Ebook>,
+        private readonly ebookRepository: Repository<Ebook>,
         private readonly librariesService: LibrariesService,
         private readonly metadataService: MetadataAPIService,
         private readonly readerService: ReaderService,
+        private readonly configService: ConfigService,
     ) {}
 
     async onModuleInit() {
@@ -84,42 +87,133 @@ export class EbookService implements OnModuleInit {
 
     /**
      * Updates the content or state based on the provided file path.
-     *
-     * @param {string} filepath - The file path to be updated or processed.
-     * @return {void} This method does not return a value.
      */
-    update(filepath: string): void {}
+    async update(
+        id: string,
+        updateEbookDto: UpdateEbookDto,
+        file?: Express.Multer.File,
+    ): Promise<Ebook> {
+        try {
+            const ebook = await this.findOne(id);
+            const {title} = updateEbookDto;
+
+            if (file) {
+                if (
+                    !ebook.thumbnail.startsWith('https://') &&
+                    checkPathExists(ebook.thumbnail)
+                ) {
+                    removeFile(ebook.thumbnail);
+                }
+                const bufferImage = openFile(file.path);
+                ebook.thumbnail = this.createCover(bufferImage);
+                removeFile(file.path);
+            }
+
+            const newEbook = this.ebookRepository.merge(ebook, updateEbookDto, {
+                score: 0,
+            });
+
+            const updateResult = await this.ebookRepository.save(newEbook);
+
+            this.logger.log(
+                messages.success.EBOOK_UPDATED.replace(
+                    '{name}',
+                    title ?? ebook.title,
+                ),
+            );
+
+            return updateResult;
+        } catch (error) {
+            this.logger.error(error);
+            throw error;
+        }
+    }
 
     /**
      * Removes a file at the specified file path.
      *
-     * @param {string} filepath - The path of the file to be removed.
-     * @return {void} Does not return any value.
+     * @param {string} filepath - filepath of the ebook to be removed.
      */
     async remove(filepath: string): Promise<void> {
         try {
-            const ebook = await this.EbookRepository.findOne({
+            const ebook = await this.ebookRepository.findOne({
                 where: {
                     filepath,
                 },
             });
 
-            if (ebook) {
-                if (checkPathExists(filepath)) {
-                    rmSync(filepath);
-                }
-                if (
-                    !ebook.thumbnail.startsWith('https://') &&
-                    checkPathExists(ebook.thumbnail)
-                ) {
-                    rmSync(ebook.thumbnail);
-                }
+            if (!ebook)
+                throw new NotFoundException(
+                    messages.errors.EBOOK_NOT_FOUND.replace('{id}', filepath),
+                );
 
-                await this.EbookRepository.remove(ebook);
+            if (checkPathExists(ebook.filepath)) {
+                removeFile(ebook.filepath);
             }
+            if (
+                !ebook.thumbnail.startsWith('https://') &&
+                checkPathExists(ebook.thumbnail)
+            ) {
+                removeFile(ebook.thumbnail);
+            }
+
+            await this.ebookRepository.remove(ebook);
         } catch (error) {
             this.logger.error(error);
         }
+    }
+
+    /**
+     * Removes an ebook identified by the provided ID from the repository.
+     *
+     * @param {string} id - The unique identifier of the ebook to be removed.
+     * @return {Promise<void>} A promise that resolves when the removal is complete.
+     */
+    async removeEbook(id: string): Promise<{message: string}> {
+        const ebook = await this.ebookRepository.findOne({
+            where: {
+                id,
+            },
+        });
+
+        if (!ebook) {
+            throw new NotFoundException(
+                messages.errors.EBOOK_NOT_FOUND.replace('{id}', id),
+            );
+        }
+
+        if (checkPathExists(ebook.filepath)) {
+            removeFile(ebook.filepath);
+        }
+
+        return {
+            message: messages.success.EBOOK_DELETED.replace(
+                '{name}',
+                ebook.title,
+            ),
+        };
+    }
+
+    /**
+     * Retrieves a single ebook entity by its unique identifier.
+     *
+     * @param {string} id - The unique identifier of the ebook to retrieve.
+     * @return { Promise<Ebook>} The ebook entity if found.
+     */
+    async findOne(id: string): Promise<Ebook> {
+        const ebook = await this.ebookRepository.findOne({
+            where: {
+                id,
+            },
+        });
+
+        if (!ebook) {
+            throw new NotFoundException(
+                messages.errors.EBOOK_NOT_FOUND.replace('{id}', id),
+            );
+        }
+
+        return ebook;
     }
 
     /**
@@ -131,16 +225,24 @@ export class EbookService implements OnModuleInit {
         this.libraries = await this.librariesService.findAll();
     }
 
+    /**
+     * Creates a new Ebook entity using the provided file information and metadata,
+     * then saves it in the repository.
+     *
+     * @param {FileInfo & {title: string; library: Library}} fileInfo - The file information required to create the Ebook, including its title and associated library.
+     * @param {Metadata} metadata - Additional metadata needed to create the Ebook.
+     * @return {Promise<Ebook>} A promise that resolves to the created and saved Ebook entity.
+     */
     private async createAndSaveEbook(
         fileInfo: FileInfo & {title: string; library: Library},
         metadata: Metadata,
     ): Promise<Ebook> {
-        const ebook = this.EbookRepository.create({
+        const ebook = this.ebookRepository.create({
             ...fileInfo,
             ...metadata,
         });
 
-        await this.EbookRepository.save(ebook);
+        await this.ebookRepository.save(ebook);
         return ebook;
     }
 
@@ -163,6 +265,9 @@ export class EbookService implements OnModuleInit {
             });
 
             if (readerMetadata.score === 0) {
+                readerMetadata.thumbnail = this.createCover(
+                    readerMetadata.cover,
+                );
                 return readerMetadata;
             }
 
@@ -188,6 +293,10 @@ export class EbookService implements OnModuleInit {
             thumbnail: metadataAPI.thumbnail || undefined,
         });
 
+        if (readerMetadata.cover) {
+            readerMetadata.thumbnail = this.createCover(readerMetadata.cover);
+        }
+
         return {
             ...metadataAPI,
             ...readerMetadata,
@@ -204,7 +313,7 @@ export class EbookService implements OnModuleInit {
     private async onScanCompleted(): Promise<void> {
         this.scanCompleted = true;
 
-        const ebooks = await this.EbookRepository.find();
+        const ebooks = await this.ebookRepository.find();
 
         const ebooksNotCreated = this.unprocessedFilePath.filter(
             ({filepath}) =>
@@ -217,7 +326,7 @@ export class EbookService implements OnModuleInit {
             ebooksNotCreated.map(({filepath}) => this.create(filepath)),
         );
 
-        const ebooksToDelete = await this.EbookRepository.find({
+        const ebooksToDelete = await this.ebookRepository.find({
             where: {
                 filepath: Not(
                     In(this.unprocessedFilePath.map(({filepath}) => filepath)),
@@ -293,5 +402,23 @@ export class EbookService implements OnModuleInit {
                 .replace(/(\D)0(\d)/g, '$1$2')
                 .trim()
         );
+    }
+
+    private createCover(file: ArrayBuffer): string | undefined {
+        if (!file) return undefined;
+
+        const filePath = `${this.configService.get<string>('COVER_FOLDER')}/${randomUUID()}.webp`;
+
+        createImageFile({
+            filePath: filePath,
+            imageBuffer: file,
+            onError: (e) => this.logger.warn(e),
+        }).then(() => {
+            this.logger.log(
+                messages.success.COVER_CREATED.replace('{path}', filePath),
+            );
+        });
+
+        return filePath;
     }
 }

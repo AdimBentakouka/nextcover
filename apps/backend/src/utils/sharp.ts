@@ -2,7 +2,11 @@ import sharp from 'sharp';
 import {mkdirSync} from 'fs';
 import {dirname} from 'path';
 
-sharp.cache(false);
+const initializeSharp = (): void => {
+    sharp.cache(false);
+};
+
+initializeSharp();
 
 /**
  * Converts an image buffer to the WebP format.
@@ -10,31 +14,32 @@ sharp.cache(false);
  * @param {ArrayBuffer} buffer - The input buffer containing image data.
  * @returns {Promise<Buffer>} A promise that resolves to a buffer containing the image in WebP format.
  */
-export const convertImageToWebp = (buffer: ArrayBuffer): Promise<Buffer> => {
+export const convertToWebp = (buffer: ArrayBuffer): Promise<Buffer> => {
     return sharp(buffer).webp({lossless: true}).toBuffer();
 };
 
 /**
  * Asynchronously creates an image file in WebP format at a specified file path.
  *
- * @param {Object} options An object containing the parameters required for creating the image file.
- * @param {string} options.filePath The path where the image file will be created.
- * @param {ArrayBuffer} options.image The image data to be converted and saved as a WebP file.
- * @param {Function} [options.onError] An optional callback function invoked when an error occurs. Receives the error as an argument.
+ * @param {string} filePath - The path where the WebP image file will be saved.
+ * @param {ArrayBuffer} imageBuffer - The image data to be converted and saved as a WebP file.
+ * @param {(err: any) => void} onError - Optional callback invoked on errors.
+ * @returns {Promise<string | undefined>} A promise that resolves to the file path if successful, or `undefined` on failure.
  */
 export const createImageFile = async ({
     filePath,
-    image,
+    imageBuffer,
     onError,
 }: {
     filePath: string;
-    image: ArrayBuffer;
+    imageBuffer: ArrayBuffer;
     onError?: (err: any) => void;
-}): Promise<void> => {
+}): Promise<string | undefined> => {
     try {
+        if (!imageBuffer) return undefined;
         mkdirSync(dirname(filePath), {recursive: true});
 
-        const convertBuffer = await convertImageToWebp(image);
+        const convertBuffer = await convertToWebp(imageBuffer);
 
         sharp(convertBuffer)
             .toFile(filePath)
@@ -46,6 +51,10 @@ export const createImageFile = async ({
     }
 };
 
+/**
+ * Processes an image buffer and converts it to an ArrayBuffer.
+ * @returns {Promise<ArrayBuffer>} A promise resolving to the processed buffer.
+ **/
 export const processImageBufferToArrayBuffer = (
     buffer: Uint8Array<ArrayBuffer>,
 ): Promise<ArrayBuffer> => {

@@ -26,6 +26,7 @@ export const messages = {
         COVER_NOT_FOUND: "Cover not found for '{title}'.",
         INVALID_NUMBER_PAGES:
             "The page number must be between 1 and {maxPage}'.",
+        EBOOK_NOT_FOUND: 'Ebook with ID {id} was not found.',
     },
     success: {
         LIBRARY_CREATED:
@@ -33,10 +34,12 @@ export const messages = {
         LIBRARY_UPDATED: "The library '{name}' was successfully updated.",
         LIBRARY_DELETED: "The library with ID '{id}' was successfully deleted.",
         GOOGLE_BOOKS_API_TITLE_MAPPED:
-            'Strategy for Google API Books mapped {ebookTitle} to {googleTitle} with score {score}',
+            "Strategy for Google API Books mapped '{ebookTitle}' to '{googleTitle}' with score {score}",
         WATCH_FOLDER_SCAN_COMPLETED:
             'Initial scan completed. Ready for changes.',
-        EBOOK_CREATED: 'Ebook "{title}" was successfully created',
-        COVER_CREATED: 'Cover "{path}" was successfully created',
+        EBOOK_CREATED: "Ebook '{title}' was successfully created",
+        COVER_CREATED: "Cover '{path}' was successfully created",
+        EBOOK_DELETED: "The ebook '{name}' was successfully deleted.",
+        EBOOK_UPDATED: "The ebook '{name}' was successfully updated.",
     },
 };

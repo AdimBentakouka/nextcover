@@ -5,6 +5,7 @@ import {Ebook} from './entities/ebook.entity';
 import {LibrariesModule} from '../libraries/libraries.module';
 import {MetadataAPIModule} from '../metadataAPI/metadataAPI.module';
 import {ReaderModule} from '../reader/reader.module';
+import { EbookController } from './ebook.controller';
 
 @Module({
     imports: [
@@ -13,7 +14,7 @@ import {ReaderModule} from '../reader/reader.module';
         MetadataAPIModule,
         ReaderModule,
     ],
-    controllers: [],
+    controllers: [EbookController],
     providers: [EbookService],
     exports: [EbookService],
 })

@@ -1,5 +1,4 @@
 import {
-    BasicMetadata,
     GetPageParams,
     ReaderStrategy,
 } from '../interfaces/reader-strategy.interface';
