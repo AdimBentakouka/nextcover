@@ -43,12 +43,3 @@ interface GoogleBooksApiResponse {
     totalItems?: number;
     items?: GoogleBooksVolume[];
 }
-
-interface GoogleBooksQueryParams {
-    q: string; // Required: Search query (e.g., "harry potter")
-    startIndex?: number; // Optional: Index of the first result (default is 0)
-    maxResults?: number; // Optional: Number of results to return (max: 40)
-    langRestrict?: string; // Optional: Restrict by language (e.g., "en")
-    printType?: 'all' | 'books' | 'magazines'; // Optional: Type of resource
-    orderBy?: 'relevance' | 'newest'; // Optional: Order of results
-}
