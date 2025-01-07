@@ -4,6 +4,7 @@ import {
 } from '../interfaces/reader-strategy.interface';
 import StreamZip, {type ZipEntry} from 'node-stream-zip';
 import {messages} from '../../utils/messages';
+import {ConflictException} from '@nestjs/common';
 
 const IMAGE_EXTENSIONS = ['.jpg', '.png', '.jpeg'];
 
@@ -17,38 +18,24 @@ export class CbzReaderStrategy implements ReaderStrategy {
      *
      * @param {Object} params - The parameters for retrieving pages.
      * @param {string} params.filePath - The file path to locate the zip archive containing the pages.
-     * @param {number} params.startPage - The starting page number to retrieve.
-     * @param {number} params.pageCount - The number of pages to retrieve starting from the startPage.
+     * @param {number} params.page - The page number to retrieve.
      * @return {Promise<ArrayBuffer[]>} A promise that resolves to an array of ArrayBuffer objects representing the requested pages.
      */
-    async getPage({
-        filePath,
-        startPage,
-        pageCount,
-    }: GetPageParams): Promise<ArrayBuffer[]> {
-        const pageBuffers: ArrayBuffer[] = [];
+    async getPage({filePath, page}: GetPageParams): Promise<ArrayBuffer> {
         const zipInstance = await this.createZipInstance(filePath);
         const pages = this.getSortedImageEntries(zipInstance);
 
-        if (startPage <= 0 || startPage + pageCount > pages.length) {
-            throw new Error(
+        if (page <= 0 || page > pages.length) {
+            throw new ConflictException(
                 messages.errors.reader.invalidRangePages(pages.length),
             );
         }
 
-        for (
-            let indexPage = startPage;
-            indexPage < startPage + pageCount;
-            indexPage++
-        ) {
-            pageBuffers.push(
-                this.extractPage(zipInstance, pages[indexPage - 1]),
-            );
-        }
+        const pageBuffer = this.extractPage(zipInstance, pages[page - 1]);
 
         zipInstance.close();
 
-        return pageBuffers;
+        return pageBuffer;
     }
 
     /**
@@ -65,14 +52,16 @@ export class CbzReaderStrategy implements ReaderStrategy {
         const zipInstance = await this.createZipInstance(filePath);
         const pages = this.getSortedImageEntries(zipInstance);
 
-        zipInstance.close();
-
-        return {
+        const metadata = {
             countPages: pages.length,
             cover: thumbnail
                 ? undefined
                 : this.extractPage(zipInstance, pages[0]),
         };
+
+        zipInstance.close();
+
+        return metadata;
     }
 
     /**

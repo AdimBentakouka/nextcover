@@ -1,15 +1,17 @@
-import {Injectable, Logger} from '@nestjs/common';
+import {ConflictException, Injectable} from '@nestjs/common';
 import {EpubReaderStrategy} from './strategies/epub-reader.strategy';
 import {CbrReaderStrategy} from './strategies/cbr-reader.strategy';
 import {CbzReaderStrategy} from './strategies/cbz-reader.strategy';
-import {ReaderStrategy} from './interfaces/reader-strategy.interface';
+import {
+    type Chapter,
+    type GetPageParams,
+    type ReaderStrategy,
+} from './interfaces/reader-strategy.interface';
 import {messages} from '../utils/messages';
 import {getExtension} from '../utils/file-utils';
 
 @Injectable()
 export class ReaderService {
-    private readonly logger = new Logger(ReaderService.name, {timestamp: true});
-
     constructor(
         private readonly cbzReaderStrategy: CbzReaderStrategy,
         private readonly cbrReaderStrategy: CbrReaderStrategy,
@@ -41,6 +43,39 @@ export class ReaderService {
         const metadata = await strategy.extractMetadata(filePath, thumbnail);
 
         return {title, ...metadata};
+    }
+
+    /**
+     * Fetches the pages based on the specified parameters using an appropriate strategy.
+     *
+     * @param {GetPageParams} params - The parameters required for fetching the pages, including the file path and other relevant details.
+     * @return {Promise<ArrayBuffer | string>} A promise that resolves to the pages in the form of an ArrayBuffer or a string.
+     */
+    async getPages(params: GetPageParams): Promise<ArrayBuffer | string> {
+        const strategy = this.selectStrategy(getExtension(params.filePath));
+
+        if (!strategy?.getPage) {
+            throw new Error(messages.errors.notImplemented('getPage'));
+        }
+
+        return await strategy.getPage(params);
+    }
+
+    /**
+     * Retrieves the chapters from a given file using the appropriate strategy based on the file's extension.
+     *
+     * @param {string} filePath - The path to the file from which chapters are to be retrieved.
+     * @return {Promise<Chapter[]>} A promise that resolves to an array of Chapter objects extracted from the file.
+     */
+    async getChapters(filePath: string): Promise<Chapter[]> {
+        const strategy = this.selectStrategy(getExtension(filePath));
+        if (!strategy?.getChapters) {
+            throw new ConflictException(
+                messages.errors.notImplemented('getChapters'),
+            );
+        }
+
+        return await strategy.getChapters(filePath);
     }
 
     /**

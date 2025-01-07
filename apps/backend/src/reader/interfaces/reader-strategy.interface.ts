@@ -1,7 +1,6 @@
 export interface GetPageParams {
     filePath: string;
-    startPage: number;
-    pageCount?: number;
+    page: number;
 }
 
 export interface Chapter {
@@ -19,7 +18,7 @@ export interface ReaderStrategy {
      * @param {number} params.numberPage - The number of pages to retrieve starting from the startIndex.
      * @return {ArrayBuffer|string} An ArrayBuffer representing binary page content for non-EPUB files or a string representing textual content for EPUB files
      */
-    getPage: (params: GetPageParams) => Promise<ArrayBuffer[] | string>;
+    getPage: (params: GetPageParams) => Promise<ArrayBuffer | string>;
 
     /**
      * Retrieves metadata for a specified file.
@@ -28,4 +27,12 @@ export interface ReaderStrategy {
         filePath: string,
         thumbnail?: string,
     ) => Promise<ExtendedMetadata | BasicMetadata>;
+
+    /**
+     * Retrieves a list of chapters from the specified file.
+     *
+     * @param {string} filePath - The path to the file from which chapters are to be extracted.
+     * @returns {Promise<Chapter[]>} A promise that resolves to an array of Chapter objects.
+     */
+    getChapters?: (filePath: string) => Promise<Chapter[]>;
 }

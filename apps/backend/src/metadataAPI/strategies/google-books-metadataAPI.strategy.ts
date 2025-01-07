@@ -204,7 +204,7 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
         const titleNumber = ebookTitle.match(/\d+/g)?.[0];
 
         if (index === 0 && bookNumber === +titleNumber) {
-            return 0;
+            return 5;
         }
 
         return distance(

@@ -24,22 +24,14 @@ export class CbrReaderStrategy implements ReaderStrategy {
      *
      * @param {Object} params - The parameters for retrieving pages.
      * @param {string} params.filePath - The file path to locate the zip archive containing the pages.
-     * @param {number} params.startPage - The starting page number to retrieve.
-     * @param {number} params.pageCount - The number of pages to retrieve starting from the startPage.
+     * @param {number} params.page - The page number to retrieve.
      * @return {Promise<ArrayBuffer[]>} A promise that resolves to an array of ArrayBuffer objects representing the requested pages.
      */
-    async getPage({
-        filePath,
-        startPage,
-        pageCount,
-    }: GetPageParams): Promise<ArrayBuffer[]> {
+    async getPage({filePath, page}: GetPageParams): Promise<ArrayBuffer> {
         const rarInstance = await this.createRarInstance(filePath);
         const sortedImageEntries = this.getSortedImageEntries(rarInstance);
 
-        if (
-            startPage <= 0 ||
-            startPage + pageCount > sortedImageEntries.length
-        ) {
+        if (page <= 0 || page > sortedImageEntries.length) {
             throw new Error(
                 messages.errors.reader.invalidRangePages(
                     sortedImageEntries.length,
@@ -47,17 +39,10 @@ export class CbrReaderStrategy implements ReaderStrategy {
             );
         }
 
-        const fileHeaders: FileHeader[] = [];
-
-        for (
-            let indexPage = startPage;
-            indexPage < startPage + pageCount;
-            indexPage++
-        ) {
-            fileHeaders.push(sortedImageEntries[indexPage - 1]);
-        }
-
-        return await this.extractPage(rarInstance, fileHeaders);
+        return await this.extractPage(
+            rarInstance,
+            sortedImageEntries[page - 1],
+        );
     }
 
     /**
@@ -79,11 +64,7 @@ export class CbrReaderStrategy implements ReaderStrategy {
             countPages: sortedImageEntries.length,
             cover: thumbnail
                 ? undefined
-                : (
-                      await this.extractPage(rarInstance, [
-                          sortedImageEntries[0],
-                      ])
-                  )[0],
+                : await this.extractPage(rarInstance, sortedImageEntries[0]),
         };
     }
 
@@ -100,12 +81,11 @@ export class CbrReaderStrategy implements ReaderStrategy {
 
         const fileHeaders = [...rarEntries.fileHeaders];
 
-        return fileHeaders
-            .filter(
-                (header) =>
-                    !header.flags.directory && this.isImageFile(header.name),
-            )
-            .sort((a, b) => a.name.localeCompare(b.name));
+        return fileHeaders.filter(
+            (header) =>
+                !header.flags.directory && this.isImageFile(header.name),
+        );
+        //.sort((a, b) => a.name.localeCompare(b.name));
     }
 
     /**
@@ -124,25 +104,21 @@ export class CbrReaderStrategy implements ReaderStrategy {
      * Extracts specific pages from a RAR archive and processes their content into array buffers.
      *
      * @param {Extractor<Uint8Array<ArrayBufferLike>>} rar The extractor instance responsible for handling the RAR archive.
-     * @param {FileHeader[]} pages An array of file headers indicating the pages to be extracted from the archive.
+     * @param {FileHeader} page An array of file headers indicating the pages to be extracted from the archive.
      *
      * @return {Promise<Array<ArrayBuffer>>} A promise resolving to an array of processed array buffers corresponding to the extracted pages.
      */
     private async extractPage(
         rar: Extractor<Uint8Array<ArrayBufferLike>>,
-        pages: FileHeader[],
-    ): Promise<Array<ArrayBuffer>> {
+        page: FileHeader,
+    ): Promise<ArrayBuffer> {
         const extracted = rar.extract({
-            files: [...pages.map((page) => page.name)],
+            files: [page.name],
         });
 
         const files = [...extracted.files];
 
-        return Promise.all(
-            files.map((file) =>
-                processImageBufferToArrayBuffer(file.extraction),
-            ),
-        );
+        return processImageBufferToArrayBuffer(files[0].extraction);
     }
 
     /**

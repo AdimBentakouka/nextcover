@@ -6,14 +6,15 @@ import {LibrariesService} from '../libraries/libraries.service';
 import {MetadataAPIService} from '../metadataAPI/metadataAPI.service';
 import {AppEvents} from '../utils/event-constants';
 import {OnEvent} from '@nestjs/event-emitter';
-import {checkPathExists, getFileInfo, openFile, removeFile} from '../utils/file-utils';
+import {checkPathExists, getFileInfo, openFile, removeDirectory, removeFile} from '../utils/file-utils';
 import {messages} from '../utils/messages';
 import {Library} from '../libraries/entities/library.entity';
 import {ReaderService} from '../reader/reader.service';
-import {UpdateEbookDto} from './dto/update-ebook.dto';
 import {randomUUID} from 'node:crypto';
 import {createImageFile} from '../utils/sharp';
 import {ConfigService} from '@nestjs/config';
+import {UpdateEbookDto} from './dto/update-ebook.dto';
+import {type Chapter} from '../reader/interfaces/reader-strategy.interface';
 
 /**
  * A constant array that defines the list of allowed file extensions for processing.
@@ -87,7 +88,7 @@ export class EbookService implements OnModuleInit {
      * Updates an existing ebook with the provided data and optional file.
      *
      * @param {string} id - The unique identifier of the ebook to update.
-     * @param {UpdateEbookDto} updateEbookDto - Data transfer object containing the updated ebook details.
+     * @param {updateEbookDto} updateEbookDto - Data transfer object containing the updated ebook details.
      * @param {Express.Multer.File} [file] - Optional file containing a new thumbnail or related ebook content.
      */
     async update(
@@ -171,6 +172,8 @@ export class EbookService implements OnModuleInit {
 
         this.removeFileIfExists(ebook.filepath);
 
+        removeDirectory(`./public/epub/${ebook.title}`);
+
         return {
             message: messages.success.ebook.deleted(ebook.title),
         };
@@ -197,12 +200,77 @@ export class EbookService implements OnModuleInit {
     }
 
     /**
+     * Retrieves the page content of an ebook based on the given ID and page number.
+     *
+     * @param {string} id - The unique identifier of the ebook.
+     * @param {number} page - The page number to be retrieved.
+     * @return {Promise<ArrayBuffer | string>} A promise that resolves to the content of the specified page
+     * in either ArrayBuffer or string format.
+     */
+    async getPages(id: string, page: number): Promise<ArrayBuffer | string> {
+        const ebook = await this.findOne(id);
+
+        return await this.readerService.getPages({
+            filePath: ebook.filepath,
+            page,
+        });
+    }
+
+    /**
+     * Retrieves the chapters of an ebook based on the provided ID.
+     *
+     * @param {string} id - The unique identifier of the ebook.
+     * @return {Promise<Chapter[]>} A promise that resolves to an array of chapters for the specified ebook.
+     */
+    async getChapters(id: string): Promise<Chapter[]> {
+        const ebook = await this.findOne(id);
+
+        return this.readerService.getChapters(ebook.filepath);
+    }
+
+    /**
      * Updates the libraries by fetching all available entries from the libraries service.
      * Trigger by **AppEvents.LIBRARIES_UPDATED**
      */
     @OnEvent(AppEvents.LIBRARIES_UPDATED)
     async refreshLibraries(): Promise<void> {
         this.libraries = await this.librariesService.findAll();
+    }
+
+    /**
+     * Handles the event when the initial folder scan is completed.
+     * Performs actions such as creating and deleting bulk entries as part of post-scan handling.
+     * Trigger by **AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED**
+     * @return {Promise<void>}
+     */
+    @OnEvent(AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED)
+    async onScanCompleted(): Promise<void> {
+        this.scanCompleted = true;
+
+        const ebooks = await this.ebookRepository.find();
+
+        const ebooksNotCreated = this.unprocessedFilePath.filter(
+            ({filepath}) =>
+                !ebooks.find(
+                    ({filepath: ebookFilePath}) => ebookFilePath === filepath,
+                ),
+        );
+
+        for (const ebook of ebooksNotCreated) {
+            await this.create(ebook.filepath);
+        }
+
+        const ebooksToDelete = await this.ebookRepository.find({
+            where: {
+                filepath: Not(
+                    In(this.unprocessedFilePath.map(({filepath}) => filepath)),
+                ),
+            },
+        });
+
+        await Promise.all(
+            ebooksToDelete.map((ebook) => this.remove(ebook.filepath)),
+        );
     }
 
     /**
@@ -222,8 +290,7 @@ export class EbookService implements OnModuleInit {
             ...metadata,
         });
 
-        await this.ebookRepository.save(ebook);
-        return ebook;
+        return await this.ebookRepository.save(ebook);
     }
 
     /**
@@ -281,42 +348,6 @@ export class EbookService implements OnModuleInit {
             ...metadataAPI,
             ...readerMetadata,
         };
-    }
-
-    /**
-     * Handles the event when the initial folder scan is completed.
-     * Performs actions such as creating and deleting bulk entries as part of post-scan handling.
-     * Trigger by **AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED**
-     * @return {Promise<void>}
-     */
-    @OnEvent(AppEvents.WATCH_FOLDER_INITIAL_SCAN_COMPLETED)
-    private async onScanCompleted(): Promise<void> {
-        this.scanCompleted = true;
-
-        const ebooks = await this.ebookRepository.find();
-
-        const ebooksNotCreated = this.unprocessedFilePath.filter(
-            ({filepath}) =>
-                !ebooks.find(
-                    ({filepath: ebookFilePath}) => ebookFilePath === filepath,
-                ),
-        );
-
-        await Promise.all(
-            ebooksNotCreated.map(({filepath}) => this.create(filepath)),
-        );
-
-        const ebooksToDelete = await this.ebookRepository.find({
-            where: {
-                filepath: Not(
-                    In(this.unprocessedFilePath.map(({filepath}) => filepath)),
-                ),
-            },
-        });
-
-        await Promise.all(
-            ebooksToDelete.map((ebook) => this.remove(ebook.filepath)),
-        );
     }
 
     /**
@@ -390,7 +421,7 @@ export class EbookService implements OnModuleInit {
     private createCover(file: ArrayBuffer): string | undefined {
         if (!file) return undefined;
 
-        const filePath = `${this.configService.get<string>('COVER_FOLDER')}/${randomUUID()}.webp`;
+        const filePath = `${this.configService.get<string>('ASSETS_COVERS_FOLDER')}/${randomUUID()}.webp`;
 
         createImageFile({
             filePath: filePath,

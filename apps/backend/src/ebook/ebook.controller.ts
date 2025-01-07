@@ -6,6 +6,7 @@ import {
     Get,
     Param,
     Patch,
+    Res,
     UploadedFile,
     UseInterceptors,
 } from '@nestjs/common';
@@ -18,11 +19,12 @@ import {
 } from '@nestjs/swagger';
 import {EbookService} from './ebook.service';
 import {ebookExample} from '../examples/ebook-example';
-import {UpdateEbookDto} from './dto/update-ebook.dto';
 import {FileInterceptor} from '@nestjs/platform-express';
 import {diskStorage} from 'multer';
 import {randomUUID} from 'node:crypto';
 import {getExtension} from '../utils/file-utils';
+import {UpdateEbookDto} from './dto/update-ebook.dto';
+import {Response} from 'express';
 
 @Controller('ebook')
 export class EbookController {
@@ -108,9 +110,35 @@ export class EbookController {
         return this.ebookService.removeEbook(id);
     }
 
-    refreshMetadata() {}
+    @Get(':id/chapters')
+    @ApiOperation({summary: 'Get chapters of ebook'})
+    async getChapters(@Param('id') id: string) {
+        return this.ebookService.getChapters(id);
+    }
 
-    refreshMetadataByISBN() {}
+    @Get(':id/:page')
+    @ApiOperation({summary: 'Get page from ebook id'})
+    async getPages(
+        @Param('id') id: string,
+        @Param('page') page: number,
+        @Res() res: Response,
+    ) {
+        const bufferPage = await this.ebookService.getPages(id, page);
 
-    getPage() {}
+        if (typeof bufferPage === 'string') {
+            res.set({
+                'Content-Type': 'text/html', // Remplacez par le type MIME correct (par exemple, image/png, image/webp, etc.)
+                'Content-Length': bufferPage.length,
+            });
+
+            return res.send(bufferPage);
+        }
+
+        res.set({
+            'Content-Type': 'image/jpeg', // Remplacez par le type MIME correct (par exemple, image/png, image/webp, etc.)
+            'Content-Length': bufferPage.byteLength,
+        });
+
+        res.send(bufferPage);
+    }
 }
