@@ -1,5 +1,5 @@
-import * as winston from 'winston';
-import { utilities as nestWinstonModuleUtilities } from 'nest-winston';
+import winston from 'winston';
+import {utilities as nestWinstonModuleUtilities} from 'nest-winston';
 import 'winston-daily-rotate-file';
 
 const configTransport = {
@@ -15,7 +15,7 @@ export const winstonLoggerConfig = winston.createLogger({
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.printf(
-            ({ timestamp, level, message }) =>
+            ({timestamp, level, message}) =>
                 `${timestamp} [${level.toUpperCase()}] ${message}`,
         ),
     ),
