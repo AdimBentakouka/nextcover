@@ -1,11 +1,11 @@
 import {NestFactory} from '@nestjs/core';
-import {AppModule} from './app.module';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
 import {BadRequestException, ValidationPipe} from '@nestjs/common';
 import {WinstonModule} from 'nest-winston';
-import {winstonLoggerConfig} from './utils/logger';
 import {join} from 'node:path';
 import {NestExpressApplication} from '@nestjs/platform-express';
+import {AppModule} from './app.module';
+import {winstonLoggerConfig} from './utils/logger';
 
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -35,8 +35,16 @@ async function bootstrap() {
     const documentFactory = () => SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, documentFactory());
 
-    app.useStaticAssets(join(__dirname, '..', process.env.COVER_FOLDER), {
-        prefix: '/assets/cover/', // URL de base pour accéder aux fichiers
+    const assetsCoversFolder =
+        (process.env.ASSETS_COVERS_FOLDER as string) ?? '/public/covers/';
+    const assetsEpubFolder =
+        (process.env.ASSETS_EPUB_FOLDER as string) ?? '/public/epub/';
+
+    app.useStaticAssets(join(__dirname, '..', assetsCoversFolder), {
+        prefix: assetsCoversFolder.replace('.', ''),
+    });
+    app.useStaticAssets(join(__dirname, '..', assetsEpubFolder), {
+        prefix: assetsEpubFolder.replace('.', ''),
     });
 
     await app.listen(process.env.PORT ?? 3000);
