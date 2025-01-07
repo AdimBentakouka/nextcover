@@ -1,6 +1,6 @@
-import {existsSync, readFileSync} from 'fs';
+import {existsSync, mkdirSync, readFileSync} from 'fs';
 import {basename, dirname, extname} from 'path';
-import {rmSync} from 'node:fs';
+import {rmSync, writeFileSync} from 'node:fs';
 
 /**
  * Checks if the specified file or directory path exists.
@@ -37,7 +37,7 @@ export const getFileInfo = (filePath: string): FileInfo => {
         fileName: fileName.replace(extension, ''),
         extension: extension,
         filepath: filePath,
-        directoryName: basename(dirname(filePath)),
+        directoryName: basename(directoryPath(filePath)),
     };
 };
 
@@ -70,4 +70,52 @@ export const openFile = (filePath: string): Buffer<ArrayBufferLike> => {
  */
 export const removeFile = (filePath: string): void => {
     return rmSync(filePath);
+};
+
+/**
+ * The `createFile` variable is a reference to a function or method that facilitates
+ * the creation of a new file in the specified context.
+ *
+ * Its specific behavior and implementation depend on the context in which it is used,
+ * such as creating a text file, binary file, or a file in a virtual file system.
+ *
+ * Ensure to check the associated documentation or coding context for
+ * parameter requirements, input/output handling, and supported file formats.
+ */
+export const createFile = (filePath: string, content: ArrayBuffer): void => {
+    mkdirSync(dirname(filePath), {recursive: true});
+
+    writeFileSync(filePath, Buffer.from(content));
+};
+
+/**
+ * Creates a new directory at the specified path. If parent directories do not exist,
+ * they will be created as well.
+ *
+ * @param {string} path - The file system path where the new directory should be created.
+ *                         Can be a relative or absolute path.
+ * @returns {string}
+ */
+export const createDirectory = (path: string): string =>
+    mkdirSync(path, {recursive: true});
+
+/**
+ * Extracts the base name from a given directory path.
+ *
+ * @param {string} path - The directory path from which the base name needs to be obtained.
+ * @returns {string} The base name of the provided directory path.
+ */
+export const directoryPath = (path: string): string => dirname(path);
+
+/**
+ * Deletes a directory and all of its contents.
+ *
+ * This function removes the specified directory recursively, including all files
+ * and subdirectories within it. If the directory does not exist, the operation is
+ * forced to ensure no error is thrown.
+ *
+ * @param {string} path - The path to the directory that needs to be removed.
+ */
+export const removeDirectory = (path: string): void => {
+    if (existsSync(path)) rmSync(path, {recursive: true, force: true});
 };
