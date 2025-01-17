@@ -11,12 +11,12 @@ import {LibrariesService} from './libraries.service';
 import {CreateLibraryDto} from './dto/create-library.dto';
 import {UpdateLibraryDto} from './dto/update-library.dto';
 import {
-    ApiAcceptedResponse,
     ApiBadRequestResponse,
     ApiConflictResponse,
     ApiNotFoundResponse,
     ApiOperation,
     ApiParam,
+    ApiResponse,
 } from '@nestjs/swagger';
 import {libraryExample} from '../examples/library-example';
 
@@ -26,7 +26,7 @@ export class LibrariesController {
 
     @Post()
     @ApiOperation({summary: 'Create a new library'})
-    @ApiAcceptedResponse({
+    @ApiResponse({
         description: 'The record has been successfully created.',
         example: libraryExample.create,
     })
@@ -48,7 +48,7 @@ export class LibrariesController {
 
     @Get()
     @ApiOperation({summary: 'Get all libraries'})
-    @ApiAcceptedResponse({
+    @ApiResponse({
         description: 'The record has been successfully retrieved.',
         example: libraryExample.findAll,
     })
@@ -65,7 +65,7 @@ export class LibrariesController {
         description: 'The library id',
         example: 'b74a71a6-9dc8-4fd2-9fb0-aeb96aab15b2',
     })
-    @ApiAcceptedResponse({
+    @ApiResponse({
         description: 'The record has been successfully retrieved.',
         example: libraryExample.findOne,
     })
@@ -84,7 +84,7 @@ export class LibrariesController {
         example: 'b74a71a6-9dc8-4fd2-9fb0-aeb96aab15b2',
     })
     @ApiOperation({summary: 'Update a library'})
-    @ApiAcceptedResponse({
+    @ApiResponse({
         description: 'The record has been successfully updated.',
         example: libraryExample.update,
     })
@@ -115,7 +115,7 @@ export class LibrariesController {
         example: 'b74a71a6-9dc8-4fd2-9fb0-aeb96aab15b2',
     })
     @ApiOperation({summary: 'Update a library'})
-    @ApiAcceptedResponse({
+    @ApiResponse({
         description: 'The record has been successfully deleted.',
         example: libraryExample.delete,
     })
