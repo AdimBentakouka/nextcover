@@ -1,6 +1,6 @@
 import {Injectable, Logger, NotFoundException, OnModuleInit} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {In, Not, Repository} from 'typeorm';
+import {In, MoreThan, Not, Repository} from 'typeorm';
 import {Ebook} from './entities/ebook.entity';
 import {LibrariesService} from '../libraries/libraries.service';
 import {MetadataAPIService} from '../metadataAPI/metadataAPI.service';
@@ -54,6 +54,19 @@ export class EbookService implements OnModuleInit {
 
     async onModuleInit() {
         this.libraries = await this.librariesService.findAll();
+    }
+
+    /**
+     * Retrieves a list of eBooks from the repository that have a metadata score greater than zero, indicating unverified metadata.
+     *
+     * @return {Promise<Ebook[]>} A promise that resolves to an array of eBooks with unverified metadata.
+     */
+    async findEbooksWithUnverifiedMetadata(): Promise<Ebook[]> {
+        return await this.ebookRepository.find({
+            where: {
+                score: MoreThan(0),
+            },
+        });
     }
 
     /**

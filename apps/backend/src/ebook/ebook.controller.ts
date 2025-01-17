@@ -26,9 +26,19 @@ import {getExtension} from '../utils/file-utils';
 import {UpdateEbookDto} from './dto/update-ebook.dto';
 import {Response} from 'express';
 
-@Controller('ebook')
+@Controller('ebooks')
 export class EbookController {
     constructor(private readonly ebookService: EbookService) {}
+
+    @Get('unverified-metadata')
+    @ApiOperation({summary: 'Get all unverified metadata ebooks'})
+    @ApiResponse({
+        description: 'The record has been successfully retrieved.',
+        example: ebookExample.findUnverifiedMetadata,
+    })
+    findEbooksWithUnverifiedMetadata() {
+        return this.ebookService.findEbooksWithUnverifiedMetadata();
+    }
 
     @Get(':id')
     @ApiOperation({summary: 'Get a ebook by id'})
