@@ -85,6 +85,38 @@ export class EbookService implements OnModuleInit {
     }
 
     /**
+     * Updates the metadata for an eBook file based on the provided filepath.
+     *
+     * @param {string} filepath - The path of the eBook file to update.
+     * @return {Promise<Ebook>} A promise that resolves to the updated Ebook object.
+     */
+    async updateMetadata(filepath: string): Promise<Ebook> {
+        const fileInfo = this.safeGetFileInfo(filepath);
+
+        if (!fileInfo) return;
+
+        try {
+            const ebook = await this.findOneByFilePath(filepath);
+
+            this.removeFileIfExists(ebook.filepath);
+
+            const metadata = await this.getCompleteMetadata(fileInfo);
+
+            const newEbook = this.ebookRepository.merge(ebook, metadata);
+
+            const updatedResult = await this.ebookRepository.save(newEbook);
+
+            this.logger.log(
+                messages.success.ebook.updated(updatedResult.title),
+            );
+
+            return updatedResult;
+        } catch (error) {
+            this.logger.error(error);
+        }
+    }
+
+    /**
      * Updates an existing ebook with the provided data and optional file.
      *
      * @param {string} id - The unique identifier of the ebook to update.
@@ -194,6 +226,28 @@ export class EbookService implements OnModuleInit {
 
         if (!ebook) {
             throw new NotFoundException(messages.errors.ebook.notFound(id));
+        }
+
+        return ebook;
+    }
+
+    /**
+     * Find and retrieve an ebook by it file path.
+     *
+     * @param {string} filepath - The file path of the ebook to locate.
+     * @return {Promise<Ebook>} A promise that resolves to the found ebook.
+     */
+    async findOneByFilePath(filepath: string): Promise<Ebook> {
+        const ebook = await this.ebookRepository.findOne({
+            where: {
+                filepath,
+            },
+        });
+
+        if (!ebook) {
+            throw new NotFoundException(
+                messages.errors.ebook.notFound(filepath),
+            );
         }
 
         return ebook;

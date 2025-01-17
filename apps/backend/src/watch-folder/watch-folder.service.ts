@@ -92,12 +92,12 @@ export class WatchFolderService implements OnModuleInit {
                 }
                 await this.ebookService.create(filePath);
             })
-            .on('change', (filePath) => {
+            .on('change', async (filePath) => {
                 this.logger.log(
                     messages.logs.watchFolder.fileChanged(filePath),
                 );
 
-                //Update CountPage and Cover;
+                await this.ebookService.updateMetadata(filePath);
             })
             .on('unlink', async (filePath) => {
                 this.logger.log(
