@@ -97,7 +97,7 @@ export class WatchFolderService implements OnModuleInit {
                     messages.logs.watchFolder.fileChanged(filePath),
                 );
 
-                await this.ebookService.updateMetadata(filePath);
+                await this.ebookService.updateMetadataByFilePath(filePath);
             })
             .on('unlink', async (filePath) => {
                 this.logger.log(

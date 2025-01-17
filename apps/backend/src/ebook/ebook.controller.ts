@@ -110,6 +110,21 @@ export class EbookController {
         return this.ebookService.removeEbook(id);
     }
 
+    @Patch(':id/refresh-metadata')
+    @ApiOperation({summary: 'Refresh manually metadata of ebook'})
+    @ApiConsumes('multipart/form-data')
+    @ApiResponse({
+        description: 'The record has been successfully updated.',
+        example: ebookExample.findOne,
+    })
+    @ApiNotFoundResponse({
+        description: "Ebook doesn't exist",
+        example: ebookExample.notFound,
+    })
+    async refreshMetadata(@Param('id') id: string) {
+        return await this.ebookService.updateMetadataById(id);
+    }
+
     @Get(':id/chapters')
     @ApiOperation({summary: 'Get chapters of ebook'})
     async getChapters(@Param('id') id: string) {

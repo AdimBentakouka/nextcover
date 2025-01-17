@@ -59,6 +59,7 @@ export const messages = {
         ebook: {
             notFound: (title: string): string =>
                 `Ebook '${title}' was not found.`,
+            IdOrFilepathRequired: `Id or filepath is required`,
         },
         notImplemented: (functionName: string): string =>
             `Function '${functionName}' is not implemented.`,

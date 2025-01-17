@@ -85,38 +85,6 @@ export class EbookService implements OnModuleInit {
     }
 
     /**
-     * Updates the metadata for an eBook file based on the provided filepath.
-     *
-     * @param {string} filepath - The path of the eBook file to update.
-     * @return {Promise<Ebook>} A promise that resolves to the updated Ebook object.
-     */
-    async updateMetadata(filepath: string): Promise<Ebook> {
-        const fileInfo = this.safeGetFileInfo(filepath);
-
-        if (!fileInfo) return;
-
-        try {
-            const ebook = await this.findOneByFilePath(filepath);
-
-            this.removeFileIfExists(ebook.filepath);
-
-            const metadata = await this.getCompleteMetadata(fileInfo);
-
-            const newEbook = this.ebookRepository.merge(ebook, metadata);
-
-            const updatedResult = await this.ebookRepository.save(newEbook);
-
-            this.logger.log(
-                messages.success.ebook.updated(updatedResult.title),
-            );
-
-            return updatedResult;
-        } catch (error) {
-            this.logger.error(error);
-        }
-    }
-
-    /**
      * Updates an existing ebook with the provided data and optional file.
      *
      * @param {string} id - The unique identifier of the ebook to update.
@@ -156,6 +124,30 @@ export class EbookService implements OnModuleInit {
             this.logger.error(error);
             throw error;
         }
+    }
+
+    /**
+     * Updates the metadata of an ebook located at the given file path.
+     *
+     * @param {string} filePath - The file path of the ebook whose metadata needs to be updated.
+     * @return {Promise<Ebook>} A promise that resolves to the updated ebook entity.
+     */
+    async updateMetadataByFilePath(filePath: string): Promise<Ebook> {
+        const ebook = await this.findOneByFilePath(filePath);
+
+        return await this.updateMetadata(ebook);
+    }
+
+    /**
+     * Updates the metadata of an Ebook by its identifier.
+     *
+     * @param {string} id - The unique identifier of the Ebook whose metadata needs to be updated.
+     * @return {Promise<Ebook>} A promise that resolves to the updated Ebook instance.
+     */
+    async updateMetadataById(id: string): Promise<Ebook> {
+        const ebook = await this.findOne(id);
+
+        return await this.updateMetadata(ebook);
     }
 
     /**
@@ -325,6 +317,40 @@ export class EbookService implements OnModuleInit {
         await Promise.all(
             ebooksToDelete.map((ebook) => this.remove(ebook.filepath)),
         );
+    }
+
+    /**
+     * Updates the metadata of the provided ebook object.
+     *
+     * This method retrieves the existing file information of the given ebook, merges
+     * the newly retrieved metadata, and then saves the updated ebook to the repository.
+     * If an error occurs during the process, it logs the error.
+     *
+     * @param {Ebook} ebook - The ebook object to be updated. It must contain a valid file path from which file information can be derived.
+     * @return {Promise<Ebook>} A promise that resolves to the updated ebook object, or undefined if the file info is not found or an error occurs.
+     */
+    private async updateMetadata(ebook: Ebook): Promise<Ebook> {
+        const fileInfo = this.safeGetFileInfo(ebook.filepath);
+
+        if (!fileInfo) return;
+
+        try {
+            this.removeFileIfExists(ebook.thumbnail);
+
+            const metadata = await this.getCompleteMetadata(fileInfo);
+
+            const newEbook = this.ebookRepository.merge(ebook, metadata);
+
+            const updatedResult = await this.ebookRepository.save(newEbook);
+
+            this.logger.log(
+                messages.success.ebook.updated(updatedResult.title),
+            );
+
+            return updatedResult;
+        } catch (error) {
+            this.logger.error(error);
+        }
     }
 
     /**

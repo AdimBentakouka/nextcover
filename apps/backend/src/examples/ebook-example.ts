@@ -17,8 +17,7 @@ export const ebookExample = {
         countPages: 21,
     },
     notFound: {
-        message:
-            "Ebook with ID '16e32433-e75c-40a1-9819-83b4af' was not found.",
+        message: "Ebook with '16e32433-e75c-40a1-9819-83b4af' was not found.",
         error: 'Not Found',
         statusCode: 404,
     },
