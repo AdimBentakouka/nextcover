@@ -3,6 +3,7 @@ import {MetadataStrategy} from '../interfaces/metadataAPI-strategy.interface';
 import {messages} from '../../utils/messages';
 import {wait} from '../../utils/wait';
 import {distance} from 'fastest-levenshtein';
+import {IdentifierTypes} from '../metadataAPI.service';
 
 const MAX_RETRIES = 3;
 const TOO_MANY_REQUESTS_STATUS = 429;
@@ -18,21 +19,65 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
     private readonly distanceThreshold = 15;
 
     /**
+     * Searches for metadata based on the given identifier and query string.
+     *
+     * @param {IdentifierTypes} identifier - The type of identifier to use for the search (e.g., 'ISBN').
+     * @param {string} query - The query string or search term.
+     * @return {Promise<Metadata[]>} A promise that resolves to an array of metadata results.
+     */
+    async search(
+        identifier: IdentifierTypes,
+        query: string,
+    ): Promise<Metadata[]> {
+        const response = await this.fetchWithRetry(
+            `${identifier === IdentifierTypes.ISBN ? 'isbn:' : ''}${query}`,
+            TOO_MANY_REQUESTS_DELAY,
+            0,
+        );
+
+        const data = (await response.json()) as GoogleBooksApiResponse;
+
+        return data.items.map(
+            ({
+                volumeInfo: {
+                    title,
+                    description,
+                    authors,
+                    imageLinks,
+                    categories,
+                    industryIdentifiers,
+                    infoLink,
+                },
+            }) => ({
+                title: title,
+                description,
+                authors: authors?.toString(),
+                thumbnail: imageLinks
+                    ? imageLinks.smallThumbnail || imageLinks.thumbnail
+                    : undefined,
+                tags: categories?.toString(),
+                isbn:
+                    industryIdentifiers?.find(({type}) => type === 'ISBN_13')
+                        ?.identifier || undefined,
+                infoLink,
+            }),
+        );
+    }
+
+    /**
      * Fetches metadata for a given ebook title from the Google Books API.
      *
      * @param {string} ebookTitle - The title of the ebook for which metadata is being searched.
-     * @param {number} [delay=TOO_MANY_REQUESTS_DELAY] - The delay in milliseconds applied between retries when handling API rate limits.
-     * @param {number} [retry=0] - The current retry count to handle request failures.
      * @return {Promise<Metadata>} A promise that resolves to the metadata of the best matching book, if found.
      */
-    async findMetadata(
-        ebookTitle: string,
-        delay: number = TOO_MANY_REQUESTS_DELAY,
-        retry: number = 0,
-    ): Promise<Metadata> {
+    async findMetadata(ebookTitle: string): Promise<Metadata> {
         this.logger.log(messages.logs.googleBooksApi.fetching(ebookTitle));
 
-        const response = await this.fetchWithRetry(ebookTitle, delay, retry);
+        const response = await this.fetchWithRetry(
+            ebookTitle,
+            TOO_MANY_REQUESTS_DELAY,
+            0,
+        );
 
         const data = (await response.json()) as GoogleBooksApiResponse;
 
@@ -58,7 +103,6 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
                         categories,
                         industryIdentifiers,
                         seriesInfo,
-                        pageCount,
                     },
                 },
                 index,
@@ -74,7 +118,6 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
                     industryIdentifiers?.find(({type}) => type === 'ISBN_13')
                         ?.identifier || undefined,
                 bookDisplayNumber: +seriesInfo?.bookDisplayNumber || undefined,
-                pageCount,
                 score: this.calcScore({
                     ebookTitle,
                     potentialTitle: title,
@@ -152,12 +195,12 @@ export class GoogleBooksMetadataAPIStrategy implements MetadataStrategy {
     /**
      * Prepares a complete API URL with the provided query parameters.
      *
-     * @param {string} name - The name of book to be used as a query parameter in the API URL.
+     * @param {string} query - The query to be used in the API URL.
      * @return {string} The fully constructed API URL including the query parameters.
      */
-    private prepareApiUrl(name: string): string {
+    private prepareApiUrl(query: string): string {
         const url = new URL(this.apiUrl);
-        url.searchParams.append('q', name);
+        url.searchParams.append('q', query);
         url.searchParams.append('maxResults', this.maxResults);
 
         return url.toString();

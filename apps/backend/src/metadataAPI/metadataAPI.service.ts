@@ -2,9 +2,15 @@ import {Injectable} from '@nestjs/common';
 import {GoogleBooksMetadataAPIStrategy} from './strategies/google-books-metadataAPI.strategy';
 import {messages} from '../utils/messages';
 import {MetadataStrategy} from './interfaces/metadataAPI-strategy.interface';
+import {SearchDto} from './dto/search.dto';
 
 export enum MetadataStrategies {
     GOOGLE_BOOKS = 'Google Books API',
+}
+
+export enum IdentifierTypes {
+    ISBN = 'ISBN',
+    TITLE = 'Title',
 }
 
 @Injectable()
@@ -12,6 +18,26 @@ export class MetadataAPIService {
     constructor(
         private readonly googleBookMetadataStrategy: GoogleBooksMetadataAPIStrategy,
     ) {}
+
+    /**
+     * Executes a search operation using the specified metadata strategy, identifier, and query.
+     *
+     * @param {Object} options - The search options.
+     * @param {string} options.metadataStrategy - The metadata strategy to be used for the search.
+     * @param {string} options.identifier - The identifier to be used in the search.
+     * @param {string|Object} options.query - The query to execute the search with.
+     * @return {Promise<any>} The search results from the specified metadata strategy.
+     */
+    async search({
+        metadataStrategy,
+        identifier,
+        query,
+    }: SearchDto): Promise<Metadata[]> {
+        return await this.getMetadataStrategy(metadataStrategy).search(
+            identifier,
+            query,
+        );
+    }
 
     /**
      * Retrieves metadata for a given title using the specified metadata strategy.

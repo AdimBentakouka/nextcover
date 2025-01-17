@@ -22,6 +22,7 @@ interface GoogleBooksVolume {
             bookDisplayNumber?: string;
         };
         language?: string;
+        infoLink?: string;
     };
     saleInfo?: {
         country?: string;
