@@ -61,6 +61,9 @@ export const messages = {
                 `Ebook '${title}' was not found.`,
             IdOrFilepathRequired: `Id or filepath is required`,
         },
+        user: {
+            notFound: (param: string) => `User '${param} not found.`,
+        },
         notImplemented: (functionName: string): string =>
             `Function '${functionName}' is not implemented.`,
     },
@@ -72,6 +75,14 @@ export const messages = {
                 `The library '${name}' was successfully updated.`,
             deleted: (id: string): string =>
                 `The library with ID '${id}' was successfully deleted.`,
+        },
+        user: {
+            created: (email: string): string =>
+                `User '${email}' was successfully created.`,
+            updated: (email: string): string =>
+                `User '${email}' was successfully updated.`,
+            deleted: (id: string): string =>
+                `User with ID '${id}' was successfully deleted.`,
         },
         ebook: {
             created: (title: string): string =>

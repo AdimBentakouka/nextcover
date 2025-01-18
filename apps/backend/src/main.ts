@@ -30,6 +30,17 @@ async function bootstrap() {
         .setTitle('NextCover API')
         .setDescription('Documentation for NextCover API')
         .setVersion('1.0')
+        .addBearerAuth(
+            {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+                name: 'JWT',
+                description: 'Enter JWT token',
+                in: 'header',
+            },
+            'authorization',
+        )
         .build();
 
     const documentFactory = () => SwaggerModule.createDocument(app, config);

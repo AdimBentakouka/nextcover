@@ -7,6 +7,8 @@ import {EventEmitterModule} from '@nestjs/event-emitter';
 import {MetadataAPIModule} from './metadataAPI/metadataAPI.module';
 import {EbookModule} from './ebook/ebook.module';
 import {ReaderModule} from './reader/reader.module';
+import {AuthModule} from './auth/auth.module';
+import {UsersModule} from './users/users.module';
 
 @Module({
     imports: [
@@ -25,6 +27,8 @@ import {ReaderModule} from './reader/reader.module';
         MetadataAPIModule,
         EbookModule,
         ReaderModule,
+        AuthModule,
+        UsersModule,
     ],
 })
 export class AppModule {}
