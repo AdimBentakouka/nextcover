@@ -29,13 +29,13 @@ import {type Chapter} from '../reader/interfaces/reader-strategy.interface';
 const ALLOWED_FILE_EXTENSIONS = ['.epub', '.cbz', '.cbr', '.zip', '.rar'];
 
 /**
- * EbookService handles operations related to e-books, including creation, updating,
+ * EbooksService handles operations related to e-books, including creation, updating,
  * metadata management, and interactions with e-book libraries. It also processes
  * events related to library updates and folder scans.
  */
 @Injectable()
-export class EbookService implements OnModuleInit {
-    private readonly logger = new Logger(EbookService.name, {
+export class EbooksService implements OnModuleInit {
+    private readonly logger = new Logger(EbooksService.name, {
         timestamp: true,
     });
 

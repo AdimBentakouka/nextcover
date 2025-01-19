@@ -5,7 +5,7 @@ import {EventEmitter2, OnEvent} from '@nestjs/event-emitter';
 import {AppEvents} from '../utils/event-constants';
 import {checkPathExists} from '../utils/file-utils';
 import {messages} from '../utils/messages';
-import {EbookService} from '../ebook/ebook.service';
+import {EbooksService} from '../ebooks/ebooks.service';
 
 /**
  * Configuration object for Chokidar file watcher.
@@ -32,7 +32,7 @@ export class WatchFolderService implements OnModuleInit {
 
     constructor(
         private readonly librariesService: LibrariesService,
-        private readonly ebookService: EbookService,
+        private readonly ebookService: EbooksService,
         private readonly eventEmitter: EventEmitter2,
     ) {}
 

@@ -5,7 +5,7 @@ import {LibrariesModule} from './libraries/libraries.module';
 import {WatchFolderModule} from './watch-folder/watch-folder.module';
 import {EventEmitterModule} from '@nestjs/event-emitter';
 import {MetadataAPIModule} from './metadataAPI/metadataAPI.module';
-import {EbookModule} from './ebook/ebook.module';
+import {EbooksModule} from './ebooks/ebooks.module';
 import {ReaderModule} from './reader/reader.module';
 import {AuthModule} from './auth/auth.module';
 import {UsersModule} from './users/users.module';
@@ -25,7 +25,7 @@ import {UsersModule} from './users/users.module';
         LibrariesModule,
         WatchFolderModule,
         MetadataAPIModule,
-        EbookModule,
+        EbooksModule,
         ReaderModule,
         AuthModule,
         UsersModule,

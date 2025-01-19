@@ -1,11 +1,11 @@
 import {Module} from '@nestjs/common';
-import {EbookService} from './ebook.service';
+import {EbooksService} from './ebooks.service';
 import {TypeOrmModule} from '@nestjs/typeorm';
 import {Ebook} from './entities/ebook.entity';
 import {LibrariesModule} from '../libraries/libraries.module';
 import {MetadataAPIModule} from '../metadataAPI/metadataAPI.module';
 import {ReaderModule} from '../reader/reader.module';
-import { EbookController } from './ebook.controller';
+import {EbooksController} from './ebooks.controller';
 
 @Module({
     imports: [
@@ -14,8 +14,8 @@ import { EbookController } from './ebook.controller';
         MetadataAPIModule,
         ReaderModule,
     ],
-    controllers: [EbookController],
-    providers: [EbookService],
-    exports: [EbookService],
+    controllers: [EbooksController],
+    providers: [EbooksService],
+    exports: [EbooksService],
 })
-export class EbookModule {}
+export class EbooksModule {}

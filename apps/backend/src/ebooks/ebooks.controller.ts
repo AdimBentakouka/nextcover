@@ -17,7 +17,7 @@ import {
     ApiParam,
     ApiResponse,
 } from '@nestjs/swagger';
-import {EbookService} from './ebook.service';
+import {EbooksService} from './ebooks.service';
 import {ebookExample} from '../examples/ebook-example';
 import {FileInterceptor} from '@nestjs/platform-express';
 import {diskStorage} from 'multer';
@@ -27,8 +27,8 @@ import {UpdateEbookDto} from './dto/update-ebook.dto';
 import {Response} from 'express';
 
 @Controller('ebooks')
-export class EbookController {
-    constructor(private readonly ebookService: EbookService) {}
+export class EbooksController {
+    constructor(private readonly ebookService: EbooksService) {}
 
     @Get('unverified-metadata')
     @ApiOperation({summary: 'Get all unverified metadata ebooks'})
