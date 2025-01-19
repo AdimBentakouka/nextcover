@@ -9,8 +9,7 @@ import {EbooksModule} from './ebooks/ebooks.module';
 import {ReaderModule} from './reader/reader.module';
 import {AuthModule} from './auth/auth.module';
 import {UsersModule} from './users/users.module';
-import { TokensService } from './tokens/tokens.service';
-import { TokensModule } from './tokens/tokens.module';
+import {TokensModule} from './tokens/tokens.module';
 
 @Module({
     imports: [
@@ -33,6 +32,6 @@ import { TokensModule } from './tokens/tokens.module';
         UsersModule,
         TokensModule,
     ],
-    providers: [TokensService],
+    providers: [],
 })
 export class AppModule {}

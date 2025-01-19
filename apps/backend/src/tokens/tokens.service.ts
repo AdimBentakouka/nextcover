@@ -18,7 +18,9 @@ export class TokensService {
      * @return {Promise<Token>} A promise that resolves to the newly created token.
      */
     async create(type: TokenTypes, userId?: string): Promise<Token> {
-        return await this.tokenRepository.save({type, userId});
+        const token = this.tokenRepository.create({type, userId});
+
+        return await this.tokenRepository.save(token);
     }
 
     /**

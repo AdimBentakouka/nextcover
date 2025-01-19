@@ -8,10 +8,12 @@ import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {APP_GUARD} from '@nestjs/core';
 import {JwtStrategy} from './strategies/jwt.strategy';
 import {LocalStrategy} from './strategies/local.strategy';
+import {TokensModule} from '../tokens/tokens.module';
 
 @Module({
     imports: [
         UsersModule,
+        TokensModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
