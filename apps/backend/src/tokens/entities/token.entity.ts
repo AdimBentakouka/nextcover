@@ -17,7 +17,7 @@ export class Token {
     @Column({nullable: true})
     userId?: string;
 
-    @Column()
+    @Column({nullable: true})
     expiresAt: Date;
 
     @CreateDateColumn()
@@ -29,7 +29,9 @@ export class Token {
     @BeforeInsert()
     setExpirationDate() {
         const now = new Date();
-        this.expiresAt = new Date(now.setDate(now.getDate() + 2));
+        if (this.type !== TokenTypes.REFRESH_TOKEN) {
+            this.expiresAt = new Date(now.setDate(now.getDate() + 2));
+        }
     }
 }
 

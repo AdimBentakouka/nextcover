@@ -15,6 +15,7 @@ import {IsPublic} from './decorators/is-public.decorator';
 import {IsOwner} from './decorators/is-owner.decorator';
 import {InviteUserDto} from './dto/invite-user.dto';
 import {ApiBearerAuth} from '@nestjs/swagger';
+import {RefreshTokenDto} from './dto/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -38,5 +39,11 @@ export class AuthController {
     @Get('invite-user')
     async inviteUser(@Query() query: InviteUserDto) {
         return this.authService.inviteUser(query.email);
+    }
+
+    @IsPublic()
+    @Post('refresh-token')
+    async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+        return this.authService.refreshToken(refreshTokenDto);
     }
 }

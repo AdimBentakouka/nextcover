@@ -29,13 +29,19 @@ export class TokensService {
      *
      * @param {string} tokenId - The unique identifier of the token to validate.
      * @param {TokenTypes} type - The type of the token to validate.
+     * @param userId
      * @return {Promise<boolean>} A promise resolving to true if the token is valid, otherwise false.
      */
-    async isValid(tokenId: string, type: TokenTypes): Promise<boolean> {
+    async isValid(
+        tokenId: string,
+        type: TokenTypes,
+        userId?: string,
+    ): Promise<boolean> {
         const token = await this.tokenRepository.findOne({
             where: {
                 id: tokenId,
                 type,
+                userId,
                 expiresAt: MoreThanOrEqual(new Date()),
             },
         });

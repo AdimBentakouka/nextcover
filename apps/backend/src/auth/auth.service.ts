@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import {JwtService} from '@nestjs/jwt';
 import {TokensService} from '../tokens/tokens.service';
 import {TokenTypes} from '../tokens/entities/token.entity';
+import {RefreshTokenDto} from './dto/refresh-token.dto';
 
 @Injectable()
 export class AuthService {
@@ -62,12 +63,12 @@ export class AuthService {
     }
 
     /**
-     * Authenticates a user and generates an access token.
+     * Authenticates a user and generates access and refresh tokens.
      *
-     * @param {Object} params - The parameters for login.
-     * @param {string} params.id - The unique identifier of the user.
-     * @param {boolean} [params.isOwner] - Indicates if the user is an owner. Optional.
-     * @return {Promise<Object>} Returns a promise that resolves to an object containing the access token.
+     * @param {Object} param - The parameters for login.
+     * @param {string} param.id - The unique identifier of the user.
+     * @param {boolean} [param.isOwner] - Indicates whether the user is an owner (optional).
+     * @return {Promise<{accessToken: string; refreshToken: string}>} A promise that resolves to an object containing the access token and refresh token.
      */
     async login({
         id,
@@ -75,15 +76,42 @@ export class AuthService {
     }: {
         id: string;
         isOwner?: boolean;
-    }): Promise<{access_token: string}> {
+    }): Promise<{accessToken: string; refreshToken: string}> {
         const payload = {
             sub: id,
             isOwner,
         };
 
+        const refreshToken = await this.tokensService.create(
+            TokenTypes.REFRESH_TOKEN,
+            id,
+        );
+
         return {
-            access_token: await this.jwtService.signAsync(payload),
+            accessToken: await this.jwtService.signAsync(payload),
+            refreshToken: refreshToken.id,
         };
+    }
+
+    async refreshToken({
+        refreshToken,
+        userId,
+    }: RefreshTokenDto): Promise<{accessToken: string}> {
+        const isValidRefreshToken = this.tokensService.isValid(
+            refreshToken,
+            TokenTypes.REFRESH_TOKEN,
+            userId,
+        );
+
+        if (!isValidRefreshToken) {
+            throw new UnauthorizedException();
+        }
+
+        await this.tokensService.delete(refreshToken, TokenTypes.REFRESH_TOKEN);
+
+        const {id, isOwner} = await this.userService.findOneById(userId);
+
+        return this.login({id, isOwner});
     }
 
     /**

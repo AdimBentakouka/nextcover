@@ -34,9 +34,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         if (isOwnerRoute) {
             const request = context.switchToHttp().getRequest();
             const user = request.user;
-
-            console.log(user);
-
+            
             return user.isOwner;
         }
 
