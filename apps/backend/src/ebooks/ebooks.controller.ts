@@ -11,6 +11,7 @@ import {
     UseInterceptors,
 } from '@nestjs/common';
 import {
+    ApiBearerAuth,
     ApiConsumes,
     ApiNotFoundResponse,
     ApiOperation,
@@ -25,13 +26,16 @@ import {randomUUID} from 'node:crypto';
 import {getExtension} from '../utils/file-utils';
 import {UpdateEbookDto} from './dto/update-ebook.dto';
 import {Response} from 'express';
+import {IsOwner} from 'src/auth/decorators/is-owner.decorator';
 
+@ApiBearerAuth('authorization')
 @Controller('ebooks')
 export class EbooksController {
     constructor(private readonly ebookService: EbooksService) {}
 
+    @IsOwner()
     @Get('unverified-metadata')
-    @ApiOperation({summary: 'Get all unverified metadata ebooks'})
+    @ApiOperation({summary: '🛡 - Get all unverified metadata ebooks'})
     @ApiResponse({
         description: 'The record has been successfully retrieved.',
         example: ebookExample.findUnverifiedMetadata,
@@ -59,8 +63,12 @@ export class EbooksController {
         return this.ebookService.findOne(id);
     }
 
+    @IsOwner()
     @Patch(':id')
-    @ApiOperation({summary: 'Update manually metadata of ebook'})
+    @ApiOperation({
+        summary: '🛡 - Update manually metadata of ebook - must be logged in',
+    })
+    @ApiBearerAuth('authorization')
     @ApiConsumes('multipart/form-data')
     @UseInterceptors(
         FileInterceptor('cover', {
@@ -101,8 +109,9 @@ export class EbooksController {
         return await this.ebookService.update(id, updateEbookDto, file);
     }
 
+    @IsOwner()
     @Delete(':id')
-    @ApiOperation({summary: 'Delete a ebook'})
+    @ApiOperation({summary: '🛡 - Delete a ebook'})
     @ApiParam({
         name: 'id',
         description: 'The ebook id',
@@ -120,8 +129,9 @@ export class EbooksController {
         return this.ebookService.removeEbook(id);
     }
 
+    @IsOwner()
     @Patch(':id/refresh-metadata')
-    @ApiOperation({summary: 'Refresh manually metadata of ebook'})
+    @ApiOperation({summary: '🛡 - Refresh manually metadata of ebook'})
     @ApiConsumes('multipart/form-data')
     @ApiResponse({
         description: 'The record has been successfully updated.',

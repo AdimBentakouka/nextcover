@@ -64,6 +64,14 @@ export const messages = {
         user: {
             notFound: (param: string) => `User '${param} not found.`,
         },
+        token: {
+            tokenExpired: `Token expired`,
+            invalidToken: `Invalid token`,
+        },
+        auth: {
+            unauthorized: `You must be logged.`,
+            isOwnerRequired: `You must be the owner.`,
+        },
         notImplemented: (functionName: string): string =>
             `Function '${functionName}' is not implemented.`,
     },

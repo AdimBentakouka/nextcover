@@ -12,6 +12,7 @@ import {CreateLibraryDto} from './dto/create-library.dto';
 import {UpdateLibraryDto} from './dto/update-library.dto';
 import {
     ApiBadRequestResponse,
+    ApiBearerAuth,
     ApiConflictResponse,
     ApiNotFoundResponse,
     ApiOperation,
@@ -19,13 +20,16 @@ import {
     ApiResponse,
 } from '@nestjs/swagger';
 import {libraryExample} from '../examples/library-example';
+import {IsOwner} from '../auth/decorators/is-owner.decorator';
 
+@ApiBearerAuth('authorization')
 @Controller('libraries')
 export class LibrariesController {
     constructor(private readonly librariesService: LibrariesService) {}
 
+    @IsOwner()
     @Post()
-    @ApiOperation({summary: 'Create a new library'})
+    @ApiOperation({summary: '🛡 - Create a new library'})
     @ApiResponse({
         description: 'The record has been successfully created.',
         example: libraryExample.create,
@@ -77,13 +81,14 @@ export class LibrariesController {
         return this.librariesService.findOne(id);
     }
 
+    @IsOwner()
     @Patch(':id')
     @ApiParam({
         name: 'id',
         description: 'The library id',
         example: 'b74a71a6-9dc8-4fd2-9fb0-aeb96aab15b2',
     })
-    @ApiOperation({summary: 'Update a library'})
+    @ApiOperation({summary: '🛡 - Update a library'})
     @ApiResponse({
         description: 'The record has been successfully updated.',
         example: libraryExample.update,
@@ -107,8 +112,9 @@ export class LibrariesController {
         return this.librariesService.update(id, updateLibraryDto);
     }
 
+    @IsOwner()
     @Delete(':id')
-    @ApiOperation({summary: 'Delete a library'})
+    @ApiOperation({summary: '🛡 - Delete a library'})
     @ApiParam({
         name: 'id',
         description: 'The library id',

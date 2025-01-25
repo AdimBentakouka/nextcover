@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import {UsersService} from './users.service';
 
+@ApiBearerAuth('authorization')
 @Controller('users')
 export class UsersController {
     constructor(private readonly userService: UsersService) {}
@@ -18,7 +19,6 @@ export class UsersController {
     }
 
     @Get('me')
-    @ApiBearerAuth('authorization')
     @ApiOperation({summary: 'Get my user data'})
     @ApiResponse({
         description: 'The record has been successfully retrieved',
