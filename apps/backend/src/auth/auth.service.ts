@@ -1,4 +1,8 @@
-import {Injectable, UnauthorizedException} from '@nestjs/common';
+import {
+    ConflictException,
+    Injectable,
+    UnauthorizedException,
+} from '@nestjs/common';
 import {UsersService} from '../users/users.service';
 import {CreateUserDto} from '../users/dto/create-user.dto';
 import {User} from '../users/entities/user.entity';
@@ -7,6 +11,7 @@ import {JwtService} from '@nestjs/jwt';
 import {TokensService} from '../tokens/tokens.service';
 import {TokenTypes} from '../tokens/entities/token.entity';
 import {RefreshTokenDto} from './dto/refresh-token.dto';
+import {messages} from '../utils/messages';
 
 @Injectable()
 export class AuthService {
@@ -22,23 +27,25 @@ export class AuthService {
      * @param {CreateUserDto} createUserDto - Data transfer object containing the user's registration details.
      * @return {Promise<User>} Promise that resolves to the created user object.
      */
-    async signUp(createUserDto: CreateUserDto): Promise<User> {
-        if (
-            !(await this.tokensService.isValid(
-                createUserDto.tokenId,
-                TokenTypes.SIGN_UP,
-            ))
-        ) {
-            throw new UnauthorizedException();
+    async signUp(
+        createUserDto: CreateUserDto,
+    ): Promise<Omit<User, 'password' | 'isOwner'>> {
+        try {
+            const {password, isOwner, ...user} =
+                await this.userService.create(createUserDto);
+
+            return user;
+        } catch (error) {
+            if (
+                error.code === 'SQLITE_CONSTRAINT' &&
+                error.message.includes('UNIQUE constraint failed: user.email')
+            ) {
+                throw new ConflictException(
+                    messages.errors.auth.emailAlreadyUsed(createUserDto.email),
+                );
+            }
+            throw error;
         }
-        const user = await this.userService.create(createUserDto);
-
-        await this.tokensService.delete(
-            createUserDto.tokenId,
-            TokenTypes.SIGN_UP,
-        );
-
-        return user;
     }
 
     /**

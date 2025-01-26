@@ -3,14 +3,6 @@ import {IsDefined, IsEmail, IsString} from 'class-validator';
 
 export class CreateUserDto {
     @ApiProperty({
-        description: 'Authorization token',
-        example: '115b7949-f955-40cd-b05e-a282c3e01fbc',
-    })
-    @IsString()
-    @IsDefined()
-    tokenId: string;
-
-    @ApiProperty({
         description: 'Username',
         example: 'John Doe',
     })
@@ -32,12 +24,4 @@ export class CreateUserDto {
     })
     @IsString()
     password: string;
-
-    @ApiProperty({
-        type: 'string',
-        format: 'binary',
-        description: 'Avatar',
-        required: false,
-    })
-    avatar?: any;
 }

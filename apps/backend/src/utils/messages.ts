@@ -69,6 +69,8 @@ export const messages = {
             invalidToken: `Invalid token`,
         },
         auth: {
+            emailAlreadyUsed: (email: string) =>
+                `Email '${email}' already used`,
             unauthorized: `You must be logged.`,
             isOwnerRequired: `You must be the owner.`,
         },

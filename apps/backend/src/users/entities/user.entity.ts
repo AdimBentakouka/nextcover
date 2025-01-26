@@ -20,6 +20,8 @@ export class User {
     avatar?: string;
     @Column({default: false})
     isOwner: boolean;
+    @Column({nullable: true})
+    approvedAt?: Date;
     @CreateDateColumn()
     createdAt: Date;
     @UpdateDateColumn()

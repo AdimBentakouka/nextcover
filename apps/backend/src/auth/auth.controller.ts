@@ -14,8 +14,14 @@ import {LoginDto} from './dto/login.dto';
 import {IsPublic} from './decorators/is-public.decorator';
 import {IsOwner} from './decorators/is-owner.decorator';
 import {InviteUserDto} from './dto/invite-user.dto';
-import {ApiBearerAuth} from '@nestjs/swagger';
+import {
+    ApiBearerAuth,
+    ApiConflictResponse,
+    ApiOperation,
+    ApiResponse,
+} from '@nestjs/swagger';
 import {RefreshTokenDto} from './dto/refresh-token.dto';
+import {AuthExample} from '../examples/auth-example';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +29,15 @@ export class AuthController {
 
     @IsPublic()
     @Post('signup')
+    @ApiOperation({summary: 'Create a new account'})
+    @ApiConflictResponse({
+        description: 'Email already used',
+        example: AuthExample.conflictEmail,
+    })
+    @ApiResponse({
+        description: 'The record has been successfully created.',
+        example: AuthExample.signUp,
+    })
     async signUp(@Body() createUserDto: CreateUserDto) {
         return await this.authService.signUp(createUserDto);
     }
