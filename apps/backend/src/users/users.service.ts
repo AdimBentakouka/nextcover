@@ -73,12 +73,16 @@ export class UsersService {
      * @return {Promise<User>} A promise that resolves to the newly created user entity.
      */
     async create(createUserDto: CreateUserDto): Promise<User> {
+        const {email, username, password} = createUserDto;
+
         const ownerUser = await this.userRepository.findOneBy({isOwner: true});
 
         const user = await this.userRepository.save({
-            ...createUserDto,
-            password: await bcrypt.hash(createUserDto.password, 10),
+            email,
+            username,
+            password: await bcrypt.hash(password, 10),
             isOwner: !ownerUser,
+            approvedAt: !ownerUser ? new Date() : undefined,
         });
 
         this.logger.log(messages.success.user.created(user.email));
