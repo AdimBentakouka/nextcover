@@ -52,12 +52,21 @@ export class AuthController {
         example: AuthExample.login,
     })
     @ApiUnauthorizedResponse({
-        description: 'Aproval is required',
-        example: AuthExample.approvalRequired,
-    })
-    @ApiUnauthorizedResponse({
         description: 'Login failed',
-        example: AuthExample.loginFailed,
+        content: {
+            'application/json': {
+                examples: {
+                    approvalRequired: {
+                        summary: 'Approval required',
+                        value: AuthExample.loginFailed.approvalRequired,
+                    },
+                    wrongCredentials: {
+                        summary: 'Wrong credentials',
+                        value: AuthExample.loginFailed.wrongCredentials,
+                    },
+                },
+            },
+        },
     })
     async login(@Body() _: LoginDto, @Request() req: any) {
         return this.authService.login(req.user);
