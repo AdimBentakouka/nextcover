@@ -64,8 +64,16 @@ export class AuthService {
 
         if (user && bcrypt.compareSync(password, user.password)) {
             const {password, ...rest} = user;
+
+            if (!user.approvedAt) {
+                throw new UnauthorizedException(
+                    messages.errors.auth.approvalRequired(user.username),
+                );
+            }
+
             return {...rest};
         }
+
         return null;
     }
 

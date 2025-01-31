@@ -73,6 +73,8 @@ export const messages = {
                 `Email '${email}' already used`,
             unauthorized: `You must be logged.`,
             isOwnerRequired: `You must be the owner.`,
+            approvalRequired: (username: string) =>
+                `User '${username}' not approved yet.`,
         },
         notImplemented: (functionName: string): string =>
             `Function '${functionName}' is not implemented.`,

@@ -19,6 +19,7 @@ import {
     ApiConflictResponse,
     ApiOperation,
     ApiResponse,
+    ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {RefreshTokenDto} from './dto/refresh-token.dto';
 import {AuthExample} from '../examples/auth-example';
@@ -45,6 +46,19 @@ export class AuthController {
     @IsPublic()
     @UseGuards(LocalAuthGuard)
     @Post('login')
+    @ApiOperation({summary: 'Log in to your account'})
+    @ApiResponse({
+        description: 'Login successfully',
+        example: AuthExample.login,
+    })
+    @ApiUnauthorizedResponse({
+        description: 'Aproval is required',
+        example: AuthExample.approvalRequired,
+    })
+    @ApiUnauthorizedResponse({
+        description: 'Login failed',
+        example: AuthExample.loginFailed,
+    })
     async login(@Body() _: LoginDto, @Request() req: any) {
         return this.authService.login(req.user);
     }

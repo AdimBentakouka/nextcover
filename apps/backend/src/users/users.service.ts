@@ -43,6 +43,7 @@ export class UsersService {
                 'avatar',
                 'isOwner',
                 'password',
+                'approvedAt',
             ],
             where: {
                 email: email,
