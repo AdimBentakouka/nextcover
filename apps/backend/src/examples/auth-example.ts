@@ -18,7 +18,6 @@ export const AuthExample = {
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZDZlNjAwYS03YTBjLTQxMzQtOGM0Ni0zNjJkMWMyZmI5NjAiLCJpc093bmVyIjp0cnVlLCJpYXQiOjE3MzgzNDY2NDcsImV4cCI6MTc0MDkzODY0N30.qNbJhvP2U3A07mLOj_CuqY4Z4pOYv2piMquEa6b8ddI',
         refreshToken: '16b474d5-6b66-4adc-b761-3ddf90b529d8',
     },
-
     loginFailed: {
         wrongCredentials: {
             message: 'Unauthorized',
@@ -29,5 +28,28 @@ export const AuthExample = {
             error: 'Unauthorized',
             statusCode: 401,
         },
+    },
+    refreshToken: {
+        accessToken:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiZDZlNjAwYS03YTBjLTQxMzQtOGM0Ni0zNjJkMWMyZmI5NjAiLCJpc093bmVyIjp0cnVlLCJpYXQiOjE3MzgzNDY2NDcsImV4cCI6MTc0MDkzODY0N30.qNbJhvP2U3A07mLOj_CuqY4Z4pOYv2piMquEa6b8ddI',
+        refreshToken: '16b474d5-6b66-4adc-b761-3ddf90b529d8',
+    },
+    refreshTokenNotFound: {
+        message: "Token '0e7bacd7-b074-439c-9ca7-aa34f7deffe6' not found",
+        error: 'Not Found',
+        statusCode: 404,
+    },
+    refreshTokenExpired: {
+        message: 'Token expired',
+        error: 'Unauthorized',
+        statusCode: 401,
+    },
+    refreshTokenRevoked: {
+        message: 'Token was successfully revoked',
+    },
+    loginRequired: {
+        message: 'You must be logged.',
+        error: 'Unauthorized',
+        statusCode: 401,
     },
 };

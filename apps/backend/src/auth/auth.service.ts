@@ -81,25 +81,25 @@ export class AuthService {
      * Authenticates a user and generates access and refresh tokens.
      *
      * @param {Object} param - The parameters for login.
-     * @param {string} param.id - The unique identifier of the user.
+     * @param {string} param.userId - The unique identifier of the user.
      * @param {boolean} [param.isOwner] - Indicates whether the user is an owner (optional).
      * @return {Promise<{accessToken: string; refreshToken: string}>} A promise that resolves to an object containing the access token and refresh token.
      */
     async login({
-        id,
+        userId,
         isOwner,
     }: {
-        id: string;
+        userId: string;
         isOwner?: boolean;
     }): Promise<{accessToken: string; refreshToken: string}> {
         const payload = {
-            sub: id,
+            sub: userId,
             isOwner,
         };
 
         const refreshToken = await this.tokensService.create(
             TokenTypes.REFRESH_TOKEN,
-            id,
+            userId,
         );
 
         return {
@@ -108,40 +108,43 @@ export class AuthService {
         };
     }
 
+    /**
+     * Refreshes the access token using the provided refresh token. Validates the refresh token
+     * and generates a new access token if the refresh token is valid.
+     * @param {Object} params - The input parameters object.
+     * @param {string} params.refreshToken - The refresh token used to generate a new access token.
+     *
+     * @return {Promise<{accessToken: string}>} A promise resolving to an object containing the new access token.
+     */
     async refreshToken({
         refreshToken,
-        userId,
     }: RefreshTokenDto): Promise<{accessToken: string}> {
-        const isValidRefreshToken = this.tokensService.isValid(
+        const userId = await this.tokensService.isValid(
             refreshToken,
             TokenTypes.REFRESH_TOKEN,
-            userId,
         );
-
-        if (!isValidRefreshToken) {
-            throw new UnauthorizedException();
-        }
 
         await this.tokensService.delete(refreshToken, TokenTypes.REFRESH_TOKEN);
 
         const {id, isOwner} = await this.userService.findOneById(userId);
 
-        return this.login({id, isOwner});
+        return this.login({userId: id, isOwner});
     }
 
     /**
-     * Sends an invitation to a user by creating a sign-up token and preparing for email delivery.
+     * Revokes a provided refresh token for a specific user.
      *
-     * @param {string} _email - The email address of the user to invite.
-     * @return {Promise<Object>} A promise that resolves to an object containing the token ID and its expiration date.
+     * @param {Object} param - An object containing the refresh token details.
+     * @param {string} param.refreshToken - The refresh token to be revoked.
+     * @param {string} param.userId - The identifier of the user for whom the refresh token should be revoked.
+     * @return {Promise<{message: string}>} An object containing a success message indicating that the token has been revoked.
      */
-    async inviteUser(
-        _email: string,
-    ): Promise<{token: string; expiresAt: Date}> {
-        const token = await this.tokensService.create(TokenTypes.SIGN_UP);
+    async revokeRefreshToken({
+        refreshToken,
+        userId,
+    }: RefreshTokenDto & {userId: string}): Promise<{message: string}> {
+        await this.tokensService.revoke(refreshToken, userId);
 
-        //Todo Send Mail
-
-        return {token: token.id, expiresAt: token.expiresAt};
+        return {message: messages.success.token.revoked};
     }
 }

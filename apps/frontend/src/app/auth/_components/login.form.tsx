@@ -1,15 +1,25 @@
 'use client';
 
-import {loginSchema, loginSchemaType} from '@/schemas/login.schema';
+import {loginSchema, LoginSchemaType} from '@/schemas/login.schema';
 import {useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {PasswordInput} from '@/components/ui/passwordInput';
+import {useTransition} from 'react';
+import {useRouter} from 'next/navigation';
+import {loginAction} from '@/actions/auth.action';
+import {DEFAULT_APP_REDIRECT} from '@/routes';
+import {toast} from 'sonner';
+import {messages} from '@/lib/messages';
 
 const LoginForm = () => {
-    const form = useForm<loginSchemaType>({
+
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+
+    const form = useForm<LoginSchemaType>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
             email: '',
@@ -17,10 +27,43 @@ const LoginForm = () => {
         },
     });
 
-    //! Todo
-    const onSubmit = (data: loginSchemaType) => {
 
-        alert('Todo: se connecter');
+    const onSubmit = (data: LoginSchemaType) => {
+        startTransition(() => {
+            loginAction(data).then(async (response) => {
+                console.log(response);
+                if (response.status === 201) {
+                    toast.success('Connectée', {
+                        description: messages.success.login,
+                    });
+
+                    return router.push(DEFAULT_APP_REDIRECT);
+                }
+
+                if (response.status === 401) {
+
+                    if (response.error?.toString().endsWith('not approved yet.')) {
+                        return toast.error('Connexion échouée', {
+                            description: messages.errors.login.notApproved,
+                        });
+                    }
+
+                    return toast.error('Connexion échouée', {
+                        description: messages.errors.login.credentials,
+                    });
+                }
+
+                return toast.error('Connexion échouée', {
+                    description: messages.errors.defaultError,
+                });
+
+
+            }).catch((e) => {
+                    console.log(e);
+                },
+            );
+        });
+
     };
 
 
@@ -68,7 +111,7 @@ const LoginForm = () => {
                     )}
                 />
                 <Button type="submit" className="w-full">
-                    Se connecter
+                    {isPending ? 'Connexion en cours ...' : 'Se connecter'}
                 </Button>
             </form>
         </Form>

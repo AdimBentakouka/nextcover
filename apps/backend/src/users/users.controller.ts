@@ -1,4 +1,11 @@
-import {Controller, Delete, Get, Patch, Request} from '@nestjs/common';
+import {
+    Controller,
+    Delete,
+    Get,
+    NotFoundException,
+    Patch,
+    Request,
+} from '@nestjs/common';
 import {
     ApiBearerAuth,
     ApiNotFoundResponse,
@@ -7,6 +14,9 @@ import {
     ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {UsersService} from './users.service';
+import {messages} from '../utils/messages';
+import {AuthExample} from '../examples/auth-example';
+import {UserExample} from '../examples/user-example';
 
 @ApiBearerAuth('authorization')
 @Controller('users')
@@ -22,18 +32,22 @@ export class UsersController {
     @ApiOperation({summary: 'Get my user data'})
     @ApiResponse({
         description: 'The record has been successfully retrieved',
-        example: {},
+        example: UserExample.me,
     })
     @ApiUnauthorizedResponse({
         description: 'You need to be logged in',
-        example: {},
+        example: AuthExample.loginRequired,
     })
     @ApiNotFoundResponse({
         description: 'User not found',
-        example: {},
+        example: UserExample.notFound,
     })
     async getMyUser(@Request() req: any) {
-        return await this.userService.findOneById(req.user.id);
+        const {userId} = req.user;
+        if (!userId) {
+            throw new NotFoundException(messages.errors.user.notFound(userId));
+        }
+        return await this.userService.findOneById(userId);
     }
 
     @Get(':id')

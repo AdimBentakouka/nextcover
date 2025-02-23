@@ -28,7 +28,6 @@ const SignupForm = () => {
         },
     });
 
-    //! Todo
     const onSubmit = (data: SignupSchemaType) => {
         startTransition(() => {
             signUpAction(data).then((response) => {

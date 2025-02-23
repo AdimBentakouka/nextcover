@@ -5,6 +5,17 @@ import {
     Entity,
     PrimaryGeneratedColumn,
 } from 'typeorm';
+import {addDays} from '../../utils/date';
+
+export enum TokenTypes {
+    REFRESH_TOKEN = 'refresh_token',
+}
+
+const TOKEN_EXPIRATION_DAYS: Record<TokenTypes, number> = {
+    [TokenTypes.REFRESH_TOKEN]: 30,
+};
+
+const DEFAULT_EXPIRATION_DAYS = 2;
 
 @Entity()
 export class Token {
@@ -23,19 +34,13 @@ export class Token {
     @CreateDateColumn()
     createdAt: Date;
 
-    @Column({nullable: true})
-    lastUsedAt: Date;
-
     @BeforeInsert()
-    setExpirationDate() {
+    setExpiresAt(): void {
         const now = new Date();
-        if (this.type !== TokenTypes.REFRESH_TOKEN) {
-            this.expiresAt = new Date(now.setDate(now.getDate() + 2));
-        }
-    }
-}
 
-export enum TokenTypes {
-    REFRESH_TOKEN = 'refresh_token',
-    SIGN_UP = 'sign_up',
+        this.expiresAt = addDays(
+            now,
+            TOKEN_EXPIRATION_DAYS[this.type] ?? DEFAULT_EXPIRATION_DAYS,
+        );
+    }
 }

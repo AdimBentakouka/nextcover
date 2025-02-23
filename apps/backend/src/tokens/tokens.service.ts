@@ -1,7 +1,12 @@
-import {Injectable} from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    UnauthorizedException,
+} from '@nestjs/common';
 import {Token, TokenTypes} from './entities/token.entity';
-import {MoreThanOrEqual, Repository} from 'typeorm';
+import {Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
+import {messages} from '../utils/messages';
 
 @Injectable()
 export class TokensService {
@@ -17,7 +22,7 @@ export class TokensService {
      * @param {string} [userId] - The optional ID of the user associated with the token.
      * @return {Promise<Token>} A promise that resolves to the newly created token.
      */
-    async create(type: TokenTypes, userId?: string): Promise<Token> {
+    async create(type: TokenTypes, userId: string): Promise<Token> {
         const token = this.tokenRepository.create({type, userId});
 
         return await this.tokenRepository.save(token);
@@ -29,42 +34,27 @@ export class TokensService {
      *
      * @param {string} tokenId - The unique identifier of the token to validate.
      * @param {TokenTypes} type - The type of the token to validate.
-     * @param userId
-     * @return {Promise<boolean>} A promise resolving to true if the token is valid, otherwise false.
+     * @return {Promise<string>} A promise resolving to userId if the token is valid, otherwise false.
      */
-    async isValid(
-        tokenId: string,
-        type: TokenTypes,
-        userId?: string,
-    ): Promise<boolean> {
+    async isValid(tokenId: string, type: TokenTypes): Promise<string> {
         const token = await this.tokenRepository.findOne({
             where: {
                 id: tokenId,
                 type,
-                userId,
-                expiresAt: MoreThanOrEqual(new Date()),
             },
         });
 
-        if (token) {
-            await this.tokenRepository.update(tokenId, {
-                lastUsedAt: new Date(),
-            });
+        if (!token) {
+            throw new NotFoundException(
+                messages.errors.token.notFound(tokenId),
+            );
         }
 
-        return !!token;
-    }
+        if (token.expiresAt < new Date()) {
+            throw new UnauthorizedException(messages.errors.token.tokenExpired);
+        }
 
-    /**
-     * Revokes a token by updating its expiration time to the current date, effectively invalidating it.
-     *
-     * @param {string} tokenId - The unique identifier of the token to be revoked.
-     * @return {Promise<void>} A promise that resolves once the token has been successfully revoked.
-     */
-    async revoke(tokenId: string): Promise<void> {
-        await this.tokenRepository.update(tokenId, {
-            expiresAt: new Date(),
-        });
+        return token.userId;
     }
 
     /**
@@ -79,5 +69,31 @@ export class TokensService {
             id: tokenId,
             type,
         });
+    }
+
+    /**
+     * Revokes a specific token associated with a given user. Deletes the token if it exists.
+     *
+     * @param {string} tokenId - The unique identifier of the token to be revoked.
+     * @param {string} userId - The unique identifier of the user associated with the token.
+     * @return {Promise<void>} A promise that resolves when the token has been successfully revoked.
+     */
+    async revoke(tokenId: string, userId: string): Promise<void> {
+        const token = await this.tokenRepository.findOne({
+            where: {
+                id: tokenId,
+                userId,
+            },
+        });
+
+        console.log(token, userId);
+
+        if (!token) {
+            throw new NotFoundException(
+                messages.errors.token.notFound(tokenId),
+            );
+        }
+
+        await this.tokenRepository.delete(tokenId);
     }
 }

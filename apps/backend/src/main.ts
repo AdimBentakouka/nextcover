@@ -26,6 +26,11 @@ async function bootstrap() {
         }),
     );
 
+    app.enableCors({
+        origin: process.env.CORS_ORIGIN_CLIENT ?? '*',
+        methods: 'GET,PUT,PATCH,POST,DELETE',
+    });
+
     const config = new DocumentBuilder()
         .setTitle('NextCover API')
         .setDescription('Documentation for NextCover API')

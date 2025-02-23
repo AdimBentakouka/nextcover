@@ -62,11 +62,12 @@ export const messages = {
             IdOrFilepathRequired: `Id or filepath is required`,
         },
         user: {
-            notFound: (param: string) => `User '${param} not found.`,
+            notFound: (param: string) => `User '${param}' not found.`,
         },
         token: {
             tokenExpired: `Token expired`,
             invalidToken: `Invalid token`,
+            notFound: (token: string) => `Token '${token}' not found`,
         },
         auth: {
             emailAlreadyUsed: (email: string) =>
@@ -117,6 +118,9 @@ export const messages = {
                 score: number,
             ): string =>
                 `Strategy for Google API Books mapped '${ebookTitle}' to '${googleTitle}' with score ${score}`,
+        },
+        token: {
+            revoked: 'Token was successfully revoked',
         },
     },
 };

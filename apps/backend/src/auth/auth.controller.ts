@@ -1,22 +1,13 @@
-import {
-    Body,
-    Controller,
-    Get,
-    Post,
-    Query,
-    Request,
-    UseGuards,
-} from '@nestjs/common';
+import {Body, Controller, Post, Request, UseGuards} from '@nestjs/common';
 import {CreateUserDto} from '../users/dto/create-user.dto';
 import {AuthService} from './auth.service';
 import {LocalAuthGuard} from './guards/local-auth.guard';
 import {LoginDto} from './dto/login.dto';
 import {IsPublic} from './decorators/is-public.decorator';
-import {IsOwner} from './decorators/is-owner.decorator';
-import {InviteUserDto} from './dto/invite-user.dto';
 import {
     ApiBearerAuth,
     ApiConflictResponse,
+    ApiNotFoundResponse,
     ApiOperation,
     ApiResponse,
     ApiUnauthorizedResponse,
@@ -69,19 +60,57 @@ export class AuthController {
         },
     })
     async login(@Body() _: LoginDto, @Request() req: any) {
-        return this.authService.login(req.user);
-    }
+        const {id: userId, ...rest} = req.user;
 
-    @ApiBearerAuth('authorization')
-    @IsOwner()
-    @Get('invite-user')
-    async inviteUser(@Query() query: InviteUserDto) {
-        return this.authService.inviteUser(query.email);
+        return this.authService.login({
+            userId,
+            ...rest,
+        });
     }
 
     @IsPublic()
+    @ApiOperation({summary: 'Get new access token'})
     @Post('refresh-token')
+    @ApiResponse({
+        description: 'Refresh token successfully',
+        example: AuthExample.refreshToken,
+    })
+    @ApiNotFoundResponse({
+        description: 'Refresh token not found',
+        example: AuthExample.refreshTokenNotFound,
+    })
+    @ApiUnauthorizedResponse({
+        description: 'Refresh token expired',
+        example: AuthExample.refreshTokenExpired,
+    })
     async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
         return this.authService.refreshToken(refreshTokenDto);
+    }
+
+    @ApiBearerAuth('authorization')
+    @ApiOperation({summary: 'Revoke my refresh token'})
+    @Post('revoke-token')
+    @ApiResponse({
+        description: 'Refresh token has been successfully revoked',
+        example: AuthExample.refreshTokenRevoked,
+    })
+    @ApiNotFoundResponse({
+        description: 'Refresh token not found',
+        example: AuthExample.refreshTokenNotFound,
+    })
+    @ApiUnauthorizedResponse({
+        description: 'Login required',
+        example: AuthExample.loginRequired,
+    })
+    async revokeToken(
+        @Body() refreshTokenDto: RefreshTokenDto,
+        @Request() req: any,
+    ) {
+        const {userId} = req.user;
+
+        return this.authService.revokeRefreshToken({
+            userId,
+            refreshToken: refreshTokenDto.refreshToken,
+        });
     }
 }

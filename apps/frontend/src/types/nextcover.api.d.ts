@@ -8,6 +8,7 @@ interface SignUpCredentials extends Credentials {
 }
 
 interface ResponseApi<T> {
+    status: number,
     data?: T,
     error?: string
 }
@@ -25,5 +26,14 @@ interface User {
 
 interface LoginResponse {
     accessToken: string,
-    refreshToken: User
+    refreshToken: string
+}
+
+interface RequestQueue {
+    resolve: (value: ResponseApi) => void,
+    reject: (error: ResponseApi) => void,
+    config: {
+        path: string,
+        options?: RequestInit
+    }
 }
