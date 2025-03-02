@@ -1,7 +1,7 @@
 'use client';
 
 import {useForm} from 'react-hook-form';
-import {signUpSchema, SignupSchemaType} from '@/schemas/signUpSchema';
+import {signUpSchema, SignupSchemaType} from '@/schemas/sign-up.Schema';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form';
 import {Input} from '@/components/ui/input';

@@ -1,6 +1,6 @@
 'use server';
 
-import {signUpSchema, type SignupSchemaType} from '@/schemas/signUpSchema';
+import {signUpSchema, type SignupSchemaType} from '@/schemas/sign-up.Schema';
 import {loginSchema, type LoginSchemaType} from '@/schemas/login.schema';
 import {createSession} from '@/lib/session';
 import nextCoverInstance from '@/lib/api/nextcover';

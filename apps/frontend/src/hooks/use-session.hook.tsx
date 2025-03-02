@@ -49,10 +49,10 @@ export const SessionContextProvider = ({children, user}: SessionProviderProps) =
         }
 
 
-        setSession({
+        setSession((prev) => ({
+            ...prev,
             status: SESSION_STATUSES.UNAUTHENTICATED,
-            user: null,
-        });
+        }));
 
         router.push('/auth/login');
     }, [router]);
@@ -67,12 +67,12 @@ export const SessionContextProvider = ({children, user}: SessionProviderProps) =
                     user: response.data,
                 });
             } else {
-                handleUnauthenticatedSession();
+                await handleUnauthenticatedSession();
             }
 
 
         } catch {
-            handleUnauthenticatedSession();
+            void handleUnauthenticatedSession();
         }
     }, [handleUnauthenticatedSession]);
 
